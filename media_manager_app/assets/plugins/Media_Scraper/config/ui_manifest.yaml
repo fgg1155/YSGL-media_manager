@@ -1,0 +1,624 @@
+# Media Scraper Plugin UI Manifest
+# 媒体刮削插件UI配置文件 - 只包含媒体元数据刮削功能
+
+# 插件元数据
+plugin:
+  id: media_scraper
+  name: 媒体刮削器
+  version: 1.0.0
+  description: 媒体元数据刮削插件，支持日本AV和欧美内容
+
+# UI元素定义
+ui_elements:
+  # 按钮定义
+  buttons:
+    # 媒体详情页刮削按钮
+    - id: scrape_media_button
+      injection_point: media_detail_appbar
+      icon: download_outlined
+      tooltip:
+        zh: 刮削
+        en: Scrape
+        ja: スクレイプ
+      action:
+        type: show_dialog
+        dialog_id: scrape_media_dialog
+    
+    # 媒体详情页补全按钮
+    - id: supplement_media_button
+      injection_point: media_detail_appbar
+      icon: auto_fix_high
+      tooltip:
+        zh: 补全
+        en: Supplement
+        ja: 補完
+      action:
+        type: show_dialog
+        dialog_id: supplement_media_dialog
+    
+    # 媒体列表页批量刮削按钮
+    - id: batch_scrape_media_button
+      injection_point: media_list_selection_actions
+      icon: refresh
+      label:
+        zh: 刮削
+        en: Scrape
+        ja: スクレイプ
+      action:
+        type: show_dialog
+        dialog_id: batch_scrape_media_dialog
+    
+    # 媒体列表页批量补全按钮
+    - id: batch_supplement_media_button
+      injection_point: media_list_selection_actions
+      icon: auto_fix_high
+      label:
+        zh: 补全
+        en: Supplement
+        ja: 補完
+      action:
+        type: show_dialog
+        dialog_id: batch_supplement_media_dialog
+    
+    # 扫描结果页面批量刮削未匹配媒体按钮
+    - id: scrape_unmatched_media_button
+      injection_point: scan_results_actions
+      icon: cloud_download
+      label:
+        zh: 自动刮削未匹配文件
+        en: Auto Scrape Unmatched Files
+        ja: 未マッチファイルを自動スクレイプ
+      action:
+        type: show_dialog
+        dialog_id: auto_scrape_unmatched_dialog
+    
+    # 演员详情页刮削按钮
+    - id: scrape_actor_button
+      injection_point: actor_detail_appbar
+      icon: refresh
+      tooltip:
+        zh: 刮削演员信息
+        en: Scrape Actor Info
+        ja: 俳優情報をスクレイプ
+      action:
+        type: call_api
+        api_endpoint: /scrape/actor/{actor_id}
+        method: POST
+        body:
+          mode: replace
+        show_progress: true
+        progress_message:
+          zh: 正在刮削演员信息...
+          en: Scraping actor info...
+          ja: 俳優情報をスクレイプ中...
+        success_message:
+          zh: 演员信息已更新
+          en: Actor info updated
+          ja: 俳優情報が更新されました
+        error_message:
+          zh: 更新失败
+          en: Update failed
+          ja: 更新に失敗しました
+        on_success: refresh_page
+    
+    # 演员详情页补全按钮
+    - id: supplement_actor_button
+      injection_point: actor_detail_appbar
+      icon: auto_fix_high
+      tooltip:
+        zh: 补全演员信息
+        en: Supplement Actor Info
+        ja: 俳優情報を補完
+      action:
+        type: call_api
+        api_endpoint: /scrape/actor/{actor_id}
+        method: POST
+        body:
+          mode: supplement
+        show_progress: true
+        progress_message:
+          zh: 正在补全演员信息...
+          en: Supplementing actor info...
+          ja: 俳優情報を補完中...
+        success_message:
+          zh: 演员信息已补全
+          en: Actor info supplemented
+          ja: 俳優情報が補完されました
+        error_message:
+          zh: 补全失败
+          en: Supplement failed
+          ja: 補完失敗
+        on_success: refresh_page
+    
+    # 演员列表页批量刮削按钮
+    - id: batch_scrape_actors_button
+      injection_point: actor_list_selection_actions
+      icon: refresh
+      label:
+        zh: 刮削
+        en: Scrape
+        ja: スクレイプ
+      action:
+        type: show_dialog
+        dialog_id: batch_scrape_actor_dialog
+    
+    # 演员列表页批量补全按钮
+    - id: batch_supplement_actors_button
+      injection_point: actor_list_selection_actions
+      icon: auto_fix_high
+      label:
+        zh: 补全
+        en: Supplement
+        ja: 補完
+      action:
+        type: show_dialog
+        dialog_id: batch_supplement_actor_dialog
+  
+  # 对话框定义
+  dialogs:
+    # 单个媒体刮削对话框（详情页）
+    - id: scrape_media_dialog
+      title:
+        zh: 刮削媒体
+        en: Scrape Media
+        ja: スクレイプ
+      # 这个对话框使用特殊的增强渲染器，不需要定义fields
+      # EnhancedDialogRenderer.renderSingleScrapeDialog 会处理
+      fields: []
+      
+      actions:
+        - id: cancel
+          label:
+            zh: 取消
+            en: Cancel
+            ja: キャンセル
+          type: close
+        
+        - id: scrape
+          label:
+            zh: 开始刮削
+            en: Start Scraping
+            ja: スクレイプ開始
+          type: call_api
+          api_endpoint: /scrape/media/{media_id}
+          method: POST
+          show_progress: true
+          progress_message:
+            zh: 正在刮削媒体信息...
+            en: Scraping media info...
+            ja: メディア情報をスクレイプ中...
+          success_message:
+            zh: 媒体信息已更新
+            en: Media info updated
+            ja: メディア情報が更新されました
+          error_message:
+            zh: 刮削失败
+            en: Scrape failed
+            ja: スクレイプ失敗
+          on_success: refresh_page
+    
+    # 单个媒体补全对话框（详情页）
+    - id: supplement_media_dialog
+      title:
+        zh: 补全媒体
+        en: Supplement Media
+        ja: 補完
+      # 这个对话框使用特殊的增强渲染器，不需要定义fields
+      # EnhancedDialogRenderer.renderSingleScrapeDialog 会处理
+      fields: []
+      
+      actions:
+        - id: cancel
+          label:
+            zh: 取消
+            en: Cancel
+            ja: キャンセル
+          type: close
+        
+        - id: supplement
+          label:
+            zh: 开始补全
+            en: Start Supplement
+            ja: 補完開始
+          type: call_api
+          api_endpoint: /scrape/media/{media_id}
+          method: POST
+          show_progress: true
+          progress_message:
+            zh: 正在补全媒体信息...
+            en: Supplementing media info...
+            ja: メディア情報を補完中...
+          success_message:
+            zh: 媒体信息已补全
+            en: Media info supplemented
+            ja: メディア情報が補完されました
+          error_message:
+            zh: 补全失败
+            en: Supplement failed
+            ja: 補完失敗
+          on_success: refresh_page
+    
+    # 批量补全媒体对话框
+    - id: batch_supplement_media_dialog
+      title:
+        zh: 批量补全媒体
+        en: Batch Supplement Media
+        ja: 一括補完
+      fields:
+        # 并发模式选择
+        - id: concurrent
+          type: radio
+          label:
+            zh: 处理模式
+            en: Processing Mode
+            ja: 処理モード
+          options:
+            - value: "false"
+              label:
+                zh: 串行（逐个处理，稳定）
+                en: Sequential (One by one, stable)
+                ja: 順次（1つずつ、安定）
+            - value: "true"
+              label:
+                zh: 并发（同时处理，快速）
+                en: Concurrent (Parallel, fast)
+                ja: 並行（同時、高速）
+          default: "false"
+      
+      actions:
+        - id: cancel
+          label:
+            zh: 取消
+            en: Cancel
+            ja: キャンセル
+          type: close
+        
+        - id: supplement
+          label:
+            zh: 开始补全
+            en: Start Supplement
+            ja: 補完開始
+          type: call_api
+          api_endpoint: /scrape/media/batch
+          method: POST
+          body:
+            mode: supplement
+          params:
+            - field: concurrent
+              param: concurrent
+            - field: scrape_mode
+              param: scrape_mode
+            - field: content_type
+              param: content_type
+          show_progress: true
+          progress_message:
+            zh: 正在批量补全媒体信息...
+            en: Batch supplementing media...
+            ja: メディア情報を一括補完中...
+          success_message:
+            zh: 媒体信息已补全
+            en: Media info supplemented
+            ja: メディア情報が補完されました
+          error_message:
+            zh: 批量补全失败
+            en: Batch supplement failed
+            ja: 一括補完に失敗しました
+          on_success: refresh_page
+    
+    # 批量刮削媒体对话框
+    - id: batch_scrape_media_dialog
+      title:
+        zh: 批量刮削媒体
+        en: Batch Scrape Media
+        ja: 一括スクレイプ
+      fields:
+        # 并发模式选择
+        - id: concurrent
+          type: radio
+          label:
+            zh: 处理模式
+            en: Processing Mode
+            ja: 处理モード
+          options:
+            - value: "false"
+              label:
+                zh: 串行（逐个处理，稳定）
+                en: Sequential (One by one, stable)
+                ja: 順次（1つずつ、安定）
+            - value: "true"
+              label:
+                zh: 并发（同时处理，快速）
+                en: Concurrent (Parallel, fast)
+                ja: 並行（同時、高速）
+          default: "false"
+      
+      actions:
+        - id: cancel
+          label:
+            zh: 取消
+            en: Cancel
+            ja: キャンセル
+          type: close
+        
+        - id: scrape
+          label:
+            zh: 开始刮削
+            en: Start Scraping
+            ja: スクレイプ開始
+          type: call_api
+          api_endpoint: /scrape/media/batch
+          method: POST
+          body:
+            mode: replace
+          params:
+            - field: concurrent
+              param: concurrent
+            - field: scrape_mode
+              param: scrape_mode
+            - field: content_type
+              param: content_type
+          show_progress: true
+          progress_message:
+            zh: 正在批量刮削媒体信息...
+            en: Batch scraping media...
+            ja: メディア情報を一括スクレイプ中...
+          success_message:
+            zh: 媒体信息已更新
+            en: Media info updated
+            ja: メディア情報が更新されました
+          error_message:
+            zh: 批量刮削失败
+            en: Batch scrape failed
+            ja: 一括スクレイプに失敗しました
+          on_success: refresh_page
+    
+    # 批量补全演员对话框
+    - id: batch_supplement_actor_dialog
+      title:
+        zh: 批量补全演员
+        en: Batch Supplement Actors
+        ja: 一括補完
+      fields:
+        # 并发模式选择
+        - id: concurrent
+          type: radio
+          label:
+            zh: 处理模式
+            en: Processing Mode
+            ja: 処理モード
+          options:
+            - value: "false"
+              label:
+                zh: 串行（逐个处理，稳定）
+                en: Sequential (One by one, stable)
+                ja: 順次（1つずつ、安定）
+            - value: "true"
+              label:
+                zh: 并发（同时处理，快速）
+                en: Concurrent (Parallel, fast)
+                ja: 並行（同時、高速）
+          default: "false"
+      
+      actions:
+        - id: cancel
+          label:
+            zh: 取消
+            en: Cancel
+            ja: キャンセル
+          type: close
+        
+        - id: supplement
+          label:
+            zh: 开始补全
+            en: Start Supplement
+            ja: 補完開始
+          type: call_api
+          api_endpoint: /scrape/actor/batch
+          method: POST
+          body:
+            mode: supplement
+          params:
+            - field: concurrent
+              param: concurrent
+          show_progress: true
+          progress_message:
+            zh: 正在批量补全演员信息...
+            en: Batch supplementing actors...
+            ja: 一括補完中...
+          success_message:
+            zh: 演员信息已补全
+            en: Actors info supplemented
+            ja: 俳優情報が補完されました
+          error_message:
+            zh: 批量补全失败
+            en: Batch supplement failed
+            ja: 一括補完に失敗しました
+          on_success: refresh_page
+    
+    # 批量刮削演员对话框
+    - id: batch_scrape_actor_dialog
+      title:
+        zh: 批量刮削演员
+        en: Batch Scrape Actors
+        ja: 一括スクレイプ
+      fields:
+        # 并发模式选择
+        - id: concurrent
+          type: radio
+          label:
+            zh: 处理模式
+            en: Processing Mode
+            ja: 処理モード
+          options:
+            - value: "false"
+              label:
+                zh: 串行（逐个处理，稳定）
+                en: Sequential (One by one, stable)
+                ja: 順次（1つずつ、安定）
+            - value: "true"
+              label:
+                zh: 并发（同时处理，快速）
+                en: Concurrent (Parallel, fast)
+                ja: 並行（同時、高速）
+          default: "false"
+      
+      actions:
+        - id: cancel
+          label:
+            zh: 取消
+            en: Cancel
+            ja: キャンセル
+          type: close
+        
+        - id: scrape
+          label:
+            zh: 开始刮削
+            en: Start Scraping
+            ja: スクレイプ開始
+          type: call_api
+          api_endpoint: /scrape/actor/batch
+          method: POST
+          body:
+            mode: replace
+          params:
+            - field: concurrent
+              param: concurrent
+          show_progress: true
+          progress_message:
+            zh: 正在批量刮削演员信息...
+            en: Batch scraping actors...
+            ja: 一括スクレイプ中...
+          success_message:
+            zh: 演员信息已更新
+            en: Actors info updated
+            ja: 俳優情報が更新されました
+          error_message:
+            zh: 批量更新失败
+            en: Batch update failed
+            ja: 一括更新に失敗しました
+          on_success: refresh_page
+    
+    # 自动刮削未匹配文件对话框
+    - id: auto_scrape_unmatched_dialog
+      title:
+        zh: 自动刮削未匹配文件
+        en: Auto Scrape Unmatched Files
+        ja: 未マッチファイルを自動スクレイプ
+      fields:
+        # 并发模式选择
+        - id: concurrent
+          type: radio
+          label:
+            zh: 处理模式
+            en: Processing Mode
+            ja: 処理モード
+          options:
+            - value: "false"
+              label:
+                zh: 串行（逐个处理，稳定）
+                en: Sequential (One by one, stable)
+                ja: 順次（1つずつ、安定）
+            - value: "true"
+              label:
+                zh: 并发（同时处理，快速）
+                en: Concurrent (Parallel, fast)
+                ja: 並行（同時、高速）
+          default: "false"
+      
+      actions:
+        - id: cancel
+          label:
+            zh: 取消
+            en: Cancel
+            ja: キャンセル
+          type: close
+        
+        - id: scrape
+          label:
+            zh: 开始刮削
+            en: Start Scraping
+            ja: スクレイプ開始
+          type: call_api
+          api_endpoint: /scan/auto-scrape
+          method: POST
+          params:
+            - field: concurrent
+              param: concurrent
+          show_progress: true
+          progress_message:
+            zh: 正在刮削未匹配文件...
+            en: Scraping unmatched files...
+            ja: 未マッチファイルをスクレイプ中...
+          success_message:
+            zh: 刮削完成
+            en: Scraping completed
+            ja: スクレイプ完了
+          error_message:
+            zh: 刮削失败
+            en: Scraping failed
+            ja: スクレイプ失敗
+          on_success: refresh_page
+    
+    # 多选结果对话框
+    - id: multiple_results_dialog
+      title:
+        zh: 选择要入库的内容
+        en: Select Content to Import
+        ja: インポートするコンテンツを選択
+      # 使用特殊渲染器
+      renderer: multiple_results
+      fields: []
+      
+      actions:
+        - id: cancel
+          label:
+            zh: 取消
+            en: Cancel
+            ja: キャンセル
+          type: close
+        
+        - id: import_selected
+          label:
+            zh: 导入选中项
+            en: Import Selected
+            ja: 選択項目をインポート
+          type: call_api
+          api_endpoint: /scrape/media/batch-import
+          method: POST
+          show_progress: true
+          progress_message:
+            zh: 正在导入选中的内容...
+            en: Importing selected content...
+            ja: 選択したコンテンツをインポート中...
+          success_message:
+            zh: 导入成功
+            en: Import successful
+            ja: インポート成功
+          error_message:
+            zh: 导入失败
+            en: Import failed
+            ja: インポート失敗
+          on_success: refresh_page
+
+# 权限声明
+permissions:
+  # 允许访问的注入点
+  injection_points:
+    - media_detail_appbar
+    - media_list_selection_actions
+    - scan_results_actions
+    - actor_detail_appbar
+    - actor_list_selection_actions
+  
+  # 允许访问的API端点
+  api_access:
+    - /api/scrape/media/*
+    - /api/scrape/actor/*
+    - /api/scan/auto-scrape
+  
+  # 允许访问的数据
+  data_access:
+    - media_id
+    - media_ids
+    - actor_id
+    - actor_ids

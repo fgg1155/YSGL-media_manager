@@ -1,0 +1,176 @@
+# Gamma Entertainment Network Sites Configuration
+# All sites using Algolia API for search and content retrieval
+# Format: site_name,domain,code,network,enabled,priority
+# Networks: GammaEntertainment(14+1), Girlsway(15+1), EvilAngel(20+1), 21Naturals(3+1), DevilsFilm(3+1), RoccoSiffredi(2+1), 21Sextreme(5+1), FantasyMassage(6+1), XEmpire(5+1), BlowPass(5+1), 21Sextury(20+1), DogfartNetwork(23+1), MommysBoy(1+1), WhiteGhetto(3+1), ZeroToleranceFilms(2+1), TukTukPatrol(1+1)
+
+site_name,domain,code,network,enabled,priority
+
+# GammaEntertainment Network (14 sites + 1 main site)
+GammaEntertainment,www.adulttime.com,,GammaEntertainment,true,100
+Oopsie,Oopsie.com,,GammaEntertainment,true,85
+Transfixed,Transfixed.com,,GammaEntertainment,true,85
+Wicked,Wicked.com,,GammaEntertainment,true,85
+Girlfriends Films,GirlfriendsFilms.com,,GammaEntertainment,true,85
+Pure Taboo,PureTaboo.com,,GammaEntertainment,true,90
+Under The Bed,UnderTheBed.com,,GammaEntertainment,true,80
+Burning Angel,BurningAngel.com,,GammaEntertainment,true,85
+GenderX Films,GenderXFilms.com,,GammaEntertainment,true,80
+Filthy Kings,FilthyKings.com,,GammaEntertainment,true,75
+My Pervy Family,MyPervyFamily.com,,GammaEntertainment,true,80
+Modern Day Sins,ModernDaySins.com,,GammaEntertainment,true,80
+Joymii,Joymii.com,,GammaEntertainment,true,85
+Diabolic,Diabolic.com,,GammaEntertainment,true,80
+Gangbang Creampie,GangbangCreampie.com,,GammaEntertainment,true,80
+
+# Girlsway Network (15 sites + 1 main site)
+Girlsway,www.girlsway.com,,Girlsway,true,100
+Lesbian Factor,LesbianFactor.com,,Girlsway,true,80
+All Girl Massage,AllGirlMassage.com,,Girlsway,true,85
+Web Young,WebYoung.com,,Girlsway,true,85
+Sex Tape Lesbians,SexTapeLesbians.com,,Girlsway,true,75
+Mommys Girl,MommysGirl.com,,Girlsway,true,80
+Girls Try Anal,GirlsTryAnal.com,,Girlsway,true,80
+LezCuties,LezCuties.com,,Girlsway,true,75
+Squirting Lesbian,SquirtingLesbian.com,,Girlsway,true,75
+Old Young Lesbian Love,OldYoungLesbianLove.com,,Girlsway,true,75
+Girlcore,Girlcore.com,,Girlsway,true,80
+We Like Girls,WeLikeGirls.com,,Girlsway,true,80
+Lesbian Revenge,LesbianRevenge.com,,Girlsway,true,75
+Moms On Moms,MomsOnMoms.com,,Girlsway,true,75
+Where The Boys Arent,WhereTheBoysArent.com,,Girlsway,true,75
+Girlsway Originals,GirlswayOriginals.com,,Girlsway,true,80
+
+# Evil Angel Network (20 sites + 1 main site)
+EvilAngel,www.evilangel.com,,EvilAngel,true,100
+Mike Adriano,MikeAdriano.com,,EvilAngel,true,85
+Transsexual Angel,TranssexualAngel.com,,EvilAngel,true,80
+TS Playground,TSPlayground.com,,EvilAngel,true,80
+Joey Silvera,JoeySilvera.com,,EvilAngel,true,80
+Buttman,Buttman.com,,EvilAngel,true,85
+John Stagliano,JohnStagliano.com,,EvilAngel,true,80
+Le Wood,LeWood.com,,EvilAngel,true,80
+Anal Acrobats,AnalAcrobats.com,,EvilAngel,true,85
+Lexington Steele,LexingtonSteele.com,,EvilAngel,true,80
+Jake Malone,JakeMalone.com,,EvilAngel,true,75
+Panty Pops,PantyPops.com,,EvilAngel,true,70
+Titty Creampies,TittyCreampies.com,,EvilAngel,true,70
+Milk Enema,MilkEnema.com,,EvilAngel,true,70
+POV Blowjobs,POVBlowjobs.com,,EvilAngel,true,75
+Gaping Angels,GapingAngels.com,,EvilAngel,true,75
+Strap Attackers,StrapAttackers.com,,EvilAngel,true,75
+John Leslie,JohnLeslie.com,,EvilAngel,true,75
+Christophs Big Natural Tits,ChristophsBigNaturalTits.com,,EvilAngel,true,75
+Belladonna,Belladonna.com,,EvilAngel,true,80
+Cock Choking Sluts,CockChokingSluts.com,,EvilAngel,true,75
+
+# 21 Naturals Network (3 sites + 1 main site)
+21Naturals,www.21naturals.com,,21Naturals,true,100
+21FootArt,21FootArt.com,,21Naturals,true,75
+21EroticAnal,21EroticAnal.com,,21Naturals,true,75
+
+# Devils Film Network (3 sites + 1 main site)
+DevilsFilm,www.devilsfilm.com,,DevilsFilm,true,100
+Out of the Family,OutOfTheFamily.com,,DevilsFilm,true,80
+Give Me Teens,GiveMeTeens.com,,DevilsFilm,true,75
+
+# Rocco Siffredi Network (2 sites + 1 main site)
+RoccoSiffredi,www.roccosiffredi.com,,RoccoSiffredi,true,100
+Rocco Siffredi Partners,RoccoSiffredPartners.com,,RoccoSiffredi,true,80
+
+# 21 Sextreme Network (5 sites + 1 main site)
+21Sextreme,www.21sextreme.com,,21Sextreme,true,100
+Lusty Grandmas,LustyGrandmas.com,,21Sextreme,true,75
+Grandpas Fuck Teens,GrandpasFuckTeens.com,,21Sextreme,true,75
+Dominated Girls,DominatedGirls.com,,21Sextreme,true,75
+Teach Me Fisting,TeachMeFisting.com,,21Sextreme,true,75
+Zoliboy,Zoliboy.com,,21Sextreme,true,70
+
+# Fantasy Massage Network (6 sites + 1 main site)
+FantasyMassage,www.fantasymassage.com,,FantasyMassage,true,100
+Nuru Massage,NuruMassage.com,,FantasyMassage,true,80
+Soapy Massage,SoapyMassage.com,,FantasyMassage,true,75
+Milking Table,MilkingTable.com,,FantasyMassage,true,75
+Massage Parlor,MassageParlor.com,,FantasyMassage,true,75
+Tricky Spa,TrickySpa.com,,FantasyMassage,true,75
+POV Massage,POVMassage.com,,FantasyMassage,true,75
+
+# XEmpire Network (5 sites + 1 main site)
+XEmpire,www.xempire.com,,XEmpire,true,100
+HardX,HardX.com,,XEmpire,true,85
+AllBlackX,AllBlackX.com,,XEmpire,true,80
+EroticaX,EroticaX.com,,XEmpire,true,80
+DarkX,DarkX.com,,XEmpire,true,80
+LesbianX,LesbianX.com,,XEmpire,true,80
+
+# BlowPass Network (5 sites + 1 main site)
+BlowPass,www.blowpass.com,,BlowPass,true,100
+Throated,Throated.com,,BlowPass,true,85
+Only Teen Blowjobs,OnlyTeenBlowjobs.com,,BlowPass,true,80
+Mommy Blows Best,MommyBlowsBest.com,,BlowPass,true,80
+1000 Facials,1000Facials.com,,BlowPass,true,80
+Immoral Live,ImmoralLive.com,,BlowPass,true,75
+
+# 21 Sextury Network (20 sites + 1 main site)
+21Sextury,www.21sextury.com,,21Sextury,true,100
+Anal Teen Angels,AnalTeenAngels.com,,21Sextury,true,80
+Aletta Ocean Empire,AlettaOceanEmpire.com,,21Sextury,true,80
+AssholeFever,AssholeFever.com,,21Sextury,true,80
+DP Fanatics,DPFanatics.com,,21Sextury,true,80
+Footsie Babes,FootsieBabes.com,,21Sextury,true,75
+Nude Fight Club,NudeFightClub.com,,21Sextury,true,70
+Anal Queen Alysa,AnalQueenAlysa.com,,21Sextury,true,75
+Blue Angel Live,BlueAngelLive.com,,21Sextury,true,75
+Butt Plays,ButtPlays.com,,21Sextury,true,75
+Cheating Whore Wives,CheatingWhoreWives.com,,21Sextury,true,75
+Club Sandy,ClubSandy.com,,21Sextury,true,75
+Cuties Galore,CutiesGalore.com,,21Sextury,true,75
+Deep Throat Frenzy,DeepThroatFrenzy.com,,21Sextury,true,75
+Gape Land,GapeLand.com,,21Sextury,true,75
+Hot Milf Club,HotMilfClub.com,,21Sextury,true,75
+Lets Play Lez,LetsPlayLez.com,,21Sextury,true,75
+Only Swallows,OnlySwallows.com,,21Sextury,true,75
+Pix And Video,PixAndVideo.com,,21Sextury,true,80
+Sex With Kathia Nobili,SexWithKathiaNobili.com,,21Sextury,true,75
+Sweet Sophie Moone,SweetSophieMoone.com,,21Sextury,true,75
+
+# Dogfart Network (23 sites + 1 main site)
+DogfartNetwork,www.dogfartnetwork.com,,DogfartNetwork,true,100
+Blacks On Blondes,BlacksOnBlondes.com,,DogfartNetwork,true,85
+Cuckold Sessions,CuckoldSessions.com,,DogfartNetwork,true,80
+Glory Hole,GloryHole.com,,DogfartNetwork,true,80
+Blacks On Cougars,BlacksOnCougars.com,,DogfartNetwork,true,80
+We Fuck Black Girls,WeFuckBlackGirls.com,,DogfartNetwork,true,80
+Watching My Mom Go Black,WatchingMyMomGoBlack.com,,DogfartNetwork,true,80
+Interracial Blowbang,InterracialBlowbang.com,,DogfartNetwork,true,80
+Cum Bang,CumBang.com,,DogfartNetwork,true,75
+Interracial Pickups,InterracialPickups.com,,DogfartNetwork,true,75
+Watching My Daughter Go Black,WatchingMyDaughterGoBlack.com,,DogfartNetwork,true,75
+Zebra Girls,ZebraGirls.com,,DogfartNetwork,true,75
+Gloryhole Initiations,GloryholeInitiations.com,,DogfartNetwork,true,75
+Dogfart Behind The Scenes,DogfartBehindTheScenes.com,,DogfartNetwork,true,70
+Black Meat White Feet,BlackMeatWhiteFeet.com,,DogfartNetwork,true,75
+Spring Thomas,SpringThomas.com,,DogfartNetwork,true,70
+Katie Thomas,KatieThomas.com,,DogfartNetwork,true,70
+Ruth Blackwell,RuthBlackwell.com,,DogfartNetwork,true,70
+Candy Monroe,CandyMonroe.com,,DogfartNetwork,true,70
+Wife Writing,WifeWriting.com,,DogfartNetwork,true,70
+Barb Cummings,BarbCummings.com,,DogfartNetwork,true,70
+The Minion,TheMinion.com,,DogfartNetwork,true,70
+Blacks On Boys,BlacksOnBoys.com,,DogfartNetwork,true,75
+Gloryholes And Handjobs,GloryholesAndHandjobs.com,,DogfartNetwork,true,75
+
+# Mommys Boy Network (1 site + 1 main site)
+MommysBoy,www.mommysboy.com,,MommysBoy,true,100
+
+# White Ghetto Network (3 sites + 1 main site)
+WhiteGhetto,www.whiteghetto.com,,WhiteGhetto,true,100
+Bushy Bushy,BushyBushy.com,,WhiteGhetto,true,75
+POV This,POVThis.com,,WhiteGhetto,true,75
+Mother Fucker XXX,MotherFuckerXXX.com,,WhiteGhetto,true,75
+
+# Zero Tolerance Films Network (2 sites + 1 main site)
+ZeroToleranceFilms,www.zerotolerancefilms.com,,ZeroToleranceFilms,true,100
+3rd Degree Films,3rdDegreeFilms.com,,ZeroToleranceFilms,true,75
+
+# TukTukPatrol Network (1 site + 1 main site)
+TukTukPatrol,www.tuktukpatrol.com,,TukTukPatrol,true,100

@@ -1,0 +1,48 @@
+# Hustler Network Sites Configuration
+# All sites using WordPress REST API (through hustlerunlimited.com)
+# Format: site_name,domain,code,network,enabled,priority,main_api
+
+site_name,domain,code,network,enabled,priority,main_api
+
+# Hustler Network Main Site
+Hustler Network,hustlerunlimited.com,,Hustler,true,100,https://hustlerunlimited.com/wp-json/wp/v2
+
+# Hustler Network (40+ sites)
+Hustler,hustler.com,,Hustler,true,95,
+Barely Legal,barelylegal.com,,Hustler,true,85,
+Ass Meat,assmeat.com,,Hustler,true,80,
+See My Sex Tapes,seemysextapes.com,,Hustler,true,80,
+Muchas Latinas,muchaslatinas.com,,Hustler,true,80,
+Hustlaz,hustlaz.com,,Hustler,true,80,
+Lesbian Ass,lesbianass.com,,Hustler,true,80,
+Battle Bang,battlebang.com,,Hustler,true,80,
+Fuck Fiesta,fuckfiesta.com,,Hustler,true,80,
+VCA Classics,vcaxxx.com,,Hustler,true,85,
+Bossy Milfs,bossymilfs.com,,Hustler,true,80,
+Asian18,asian18.com,,Hustler,true,80,
+Asian Fever,asianfever.com,,Hustler,true,80,
+XTSY,xtsy.com,,Hustler,true,80,
+Daddy Gets Lucky,daddygetslucky.com,,Hustler,true,75,
+Sex See,sexsee.com,,Hustler,true,75,
+Too Many Trannies,toomanytrannies.com,,Hustler,true,75,
+Hustlers College Girls,hustlerscollegegirls.com,,Hustler,true,80,
+Scary Big Dicks,scarybigdicks.com,,Hustler,true,75,
+Hustlers Taboo,hustlerstaboo.com,,Hustler,true,80,
+Watch Real,watchreal.com,,Hustler,true,75,
+Hometown Honeys,hometownhoneys.com,,Hustler,true,75,
+Hottie Moms,hottiemoms.com,,Hustler,true,75,
+Fucking Hardcore,fuckinghardcore.com,,Hustler,true,80,
+Hustler HD,hustlerhd.com,,Hustler,true,85,
+Tit World,titworld.com,,Hustler,true,75,
+Sorority Sluts,sororitysluts.com,,Hustler,true,75,
+Sex Circus,sexcircus.com,,Hustler,true,75,
+Juicy TV,juicytv.com,,Hustler,true,75,
+Busty Beauties,bustybeauties.com,,Hustler,true,80,
+Hustler Parodies,hustlerparodies.com,,Hustler,true,80,
+Anal Hookers,analhookers.com,,Hustler,true,75,
+Pornstar Hardcore,pornstarhardcore.com,,Hustler,true,80,
+Booty Clap XXX,bootyclapxxx.com,,Hustler,true,75,
+Beaver Hunt,beaverhunt.com,,Hustler,true,80,
+Hometown Girls,hometowngirls.com,,Hustler,true,75,
+Hustlers Lesbians,hustlerslesbians.com,,Hustler,true,80,
+Booty Sisters,bootysisters.com,,Hustler,true,75,

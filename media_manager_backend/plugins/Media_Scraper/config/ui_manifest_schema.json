@@ -1,0 +1,415 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Plugin UI Manifest Schema",
+  "description": "Schema for validating plugin UI configuration files (ui_manifest.yaml)",
+  "type": "object",
+  "required": ["plugin", "ui_elements", "permissions"],
+  "properties": {
+    "plugin": {
+      "type": "object",
+      "description": "Plugin metadata",
+      "required": ["id", "name", "version"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique plugin identifier",
+          "pattern": "^[a-z0-9_]+$"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable plugin name"
+        },
+        "version": {
+          "type": "string",
+          "description": "Plugin version (semver format)",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "description": {
+          "type": "string",
+          "description": "Plugin description"
+        }
+      }
+    },
+    "ui_elements": {
+      "type": "object",
+      "description": "UI elements definition",
+      "properties": {
+        "buttons": {
+          "type": "array",
+          "description": "Button definitions",
+          "items": {
+            "$ref": "#/definitions/button"
+          }
+        },
+        "dialogs": {
+          "type": "array",
+          "description": "Dialog definitions",
+          "items": {
+            "$ref": "#/definitions/dialog"
+          }
+        }
+      }
+    },
+    "permissions": {
+      "type": "object",
+      "description": "Permission declarations",
+      "properties": {
+        "injection_points": {
+          "type": "array",
+          "description": "Allowed injection points",
+          "items": {
+            "type": "string",
+            "enum": [
+              "media_detail_appbar",
+              "media_detail_resources",
+              "actor_list_appbar",
+              "actor_detail_appbar",
+              "settings_page",
+              "scan_results_page"
+            ]
+          }
+        },
+        "api_access": {
+          "type": "array",
+          "description": "Allowed API endpoints (supports wildcards)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "data_access": {
+          "type": "array",
+          "description": "Allowed data fields",
+          "items": {
+            "type": "string",
+            "enum": [
+              "media_id",
+              "actor_id",
+              "actor_ids",
+              "media_title",
+              "actor_name"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "button": {
+      "type": "object",
+      "description": "Button UI element",
+      "required": ["id", "injection_point", "icon", "action"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique button identifier",
+          "pattern": "^[a-z0-9_]+$"
+        },
+        "injection_point": {
+          "type": "string",
+          "description": "Where to inject this button",
+          "enum": [
+            "media_detail_appbar",
+            "media_detail_resources",
+            "actor_list_appbar",
+            "actor_detail_appbar",
+            "settings_page",
+            "scan_results_page"
+          ]
+        },
+        "icon": {
+          "type": "string",
+          "description": "Icon name (Flutter Icons class)"
+        },
+        "label": {
+          "$ref": "#/definitions/localized_text",
+          "description": "Button label (optional, for text buttons)"
+        },
+        "tooltip": {
+          "$ref": "#/definitions/localized_text",
+          "description": "Button tooltip (optional)"
+        },
+        "action": {
+          "$ref": "#/definitions/action",
+          "description": "Action to perform when button is clicked"
+        }
+      }
+    },
+    "dialog": {
+      "type": "object",
+      "description": "Dialog UI element",
+      "required": ["id", "title", "fields", "actions"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique dialog identifier",
+          "pattern": "^[a-z0-9_]+$"
+        },
+        "title": {
+          "$ref": "#/definitions/localized_text",
+          "description": "Dialog title"
+        },
+        "fields": {
+          "type": "array",
+          "description": "Form fields",
+          "items": {
+            "$ref": "#/definitions/field"
+          }
+        },
+        "actions": {
+          "type": "array",
+          "description": "Dialog actions (buttons)",
+          "items": {
+            "$ref": "#/definitions/dialog_action"
+          }
+        }
+      }
+    },
+    "field": {
+      "type": "object",
+      "description": "Form field",
+      "required": ["id", "type", "label"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique field identifier",
+          "pattern": "^[a-z0-9_]+$"
+        },
+        "type": {
+          "type": "string",
+          "description": "Field type",
+          "enum": ["text", "radio", "checkbox", "dropdown", "number", "date"]
+        },
+        "label": {
+          "$ref": "#/definitions/localized_text",
+          "description": "Field label"
+        },
+        "hint": {
+          "$ref": "#/definitions/localized_text",
+          "description": "Field hint text (optional)"
+        },
+        "required": {
+          "type": "boolean",
+          "description": "Whether this field is required",
+          "default": false
+        },
+        "default": {
+          "description": "Default value"
+        },
+        "options": {
+          "type": "array",
+          "description": "Options for radio/checkbox/dropdown fields",
+          "items": {
+            "$ref": "#/definitions/field_option"
+          }
+        }
+      }
+    },
+    "field_option": {
+      "type": "object",
+      "description": "Field option (for radio/checkbox/dropdown)",
+      "required": ["value", "label"],
+      "properties": {
+        "value": {
+          "type": "string",
+          "description": "Option value"
+        },
+        "label": {
+          "$ref": "#/definitions/localized_text",
+          "description": "Option label"
+        }
+      }
+    },
+    "action": {
+      "type": "object",
+      "description": "UI action",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Action type",
+          "enum": ["show_dialog", "call_api", "close"]
+        },
+        "dialog_id": {
+          "type": "string",
+          "description": "Dialog ID to show (required for show_dialog type)"
+        },
+        "api_endpoint": {
+          "type": "string",
+          "description": "API endpoint to call (required for call_api type)"
+        },
+        "method": {
+          "type": "string",
+          "description": "HTTP method",
+          "enum": ["GET", "POST", "PUT", "DELETE", "PATCH"],
+          "default": "GET"
+        },
+        "params": {
+          "type": "array",
+          "description": "API parameters mapping",
+          "items": {
+            "$ref": "#/definitions/api_param"
+          }
+        },
+        "show_progress": {
+          "type": "boolean",
+          "description": "Whether to show progress indicator",
+          "default": false
+        },
+        "progress_message": {
+          "$ref": "#/definitions/localized_text",
+          "description": "Progress message (optional)"
+        },
+        "success_message": {
+          "$ref": "#/definitions/localized_text",
+          "description": "Success message (optional)"
+        },
+        "error_message": {
+          "$ref": "#/definitions/localized_text",
+          "description": "Error message (optional)"
+        },
+        "on_success": {
+          "type": "string",
+          "description": "Action to perform on success",
+          "enum": ["refresh_page", "close", "show_results", "none"]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "show_dialog"
+              }
+            }
+          },
+          "then": {
+            "required": ["dialog_id"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "call_api"
+              }
+            }
+          },
+          "then": {
+            "required": ["api_endpoint"]
+          }
+        }
+      ]
+    },
+    "dialog_action": {
+      "type": "object",
+      "description": "Dialog action button",
+      "required": ["id", "label", "type"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique action identifier",
+          "pattern": "^[a-z0-9_]+$"
+        },
+        "label": {
+          "$ref": "#/definitions/localized_text",
+          "description": "Action button label"
+        },
+        "type": {
+          "type": "string",
+          "description": "Action type",
+          "enum": ["call_api", "close"]
+        },
+        "api_endpoint": {
+          "type": "string",
+          "description": "API endpoint to call (required for call_api type)"
+        },
+        "method": {
+          "type": "string",
+          "description": "HTTP method",
+          "enum": ["GET", "POST", "PUT", "DELETE", "PATCH"],
+          "default": "POST"
+        },
+        "params": {
+          "type": "array",
+          "description": "API parameters mapping",
+          "items": {
+            "$ref": "#/definitions/api_param"
+          }
+        },
+        "show_progress": {
+          "type": "boolean",
+          "description": "Whether to show progress indicator",
+          "default": false
+        },
+        "progress_message": {
+          "$ref": "#/definitions/localized_text",
+          "description": "Progress message (optional)"
+        },
+        "success_message": {
+          "$ref": "#/definitions/localized_text",
+          "description": "Success message (optional)"
+        },
+        "error_message": {
+          "$ref": "#/definitions/localized_text",
+          "description": "Error message (optional)"
+        },
+        "on_success": {
+          "type": "string",
+          "description": "Action to perform on success",
+          "enum": ["refresh_page", "close", "show_results", "none"]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "call_api"
+              }
+            }
+          },
+          "then": {
+            "required": ["api_endpoint"]
+          }
+        }
+      ]
+    },
+    "api_param": {
+      "type": "object",
+      "description": "API parameter mapping",
+      "required": ["field", "param"],
+      "properties": {
+        "field": {
+          "type": "string",
+          "description": "Form field ID"
+        },
+        "param": {
+          "type": "string",
+          "description": "API parameter name"
+        }
+      }
+    },
+    "localized_text": {
+      "type": "object",
+      "description": "Localized text (language code -> text)",
+      "properties": {
+        "zh": {
+          "type": "string",
+          "description": "Chinese text"
+        },
+        "en": {
+          "type": "string",
+          "description": "English text"
+        },
+        "ja": {
+          "type": "string",
+          "description": "Japanese text"
+        }
+      },
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  }
+}

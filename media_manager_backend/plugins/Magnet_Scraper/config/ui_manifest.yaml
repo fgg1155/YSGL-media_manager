@@ -1,0 +1,94 @@
+# Magnet Scraper Plugin UI Manifest
+# 磁力刮削插件UI配置文件 - 只包含磁力链接刮削功能
+
+# 插件元数据
+plugin:
+  id: multi-site-magnet
+  name: 磁力刮削器
+  version: 3.0.0
+  description: 支持多个磁力网站刮削（优先级：Kiteyuan -> Knaben -> SkrBT，支持反爬虫绕过）
+
+# UI元素定义
+ui_elements:
+  # 按钮定义
+  buttons:
+    # 媒体详情页磁力刮削按钮
+    - id: scrape_magnet_button
+      injection_point: media_detail_resources
+      icon: download_outlined
+      label:
+        zh: 刮削磁力
+        en: Scrape Magnet
+        ja: マグネットをスクレイプ
+      action:
+        type: show_dialog
+        dialog_id: magnet_scrape_dialog
+  
+  # 对话框定义
+  dialogs:
+    # 磁力刮削对话框
+    - id: magnet_scrape_dialog
+      title:
+        zh: 刮削磁力链接
+        en: Scrape Magnet Links
+        ja: マグネットリンクをスクレイプ
+      fields:
+        # 搜索关键词输入
+        - id: search_query
+          type: text
+          label:
+            zh: 搜索关键词
+            en: Search Query
+            ja: 検索キーワード
+          hint:
+            zh: 输入番号或标题
+            en: Enter code or title
+            ja: 品番またはタイトルを入力
+          required: true
+      
+      actions:
+        # 取消按钮
+        - id: cancel
+          label:
+            zh: 取消
+            en: Cancel
+            ja: キャンセル
+          type: close
+        
+        # 搜索按钮
+        - id: search
+          label:
+            zh: 搜索
+            en: Search
+            ja: 検索
+          type: call_api
+          api_endpoint: /scrape/magnets/multi-site-magnet?q={search_query}
+          method: GET
+          show_progress: true
+          progress_message:
+            zh: 正在搜索磁力链接...
+            en: Searching magnet links...
+            ja: マグネットリンクを検索中...
+          success_message:
+            zh: 搜索完成
+            en: Search completed
+            ja: 検索完了
+          error_message:
+            zh: 搜索失败
+            en: Search failed
+            ja: 検索失敗
+          on_success: show_results
+
+# 权限声明
+permissions:
+  # 允许访问的注入点
+  injection_points:
+    - media_detail_resources
+  
+  # 允许访问的API端点
+  api_access:
+    - /api/scrape/magnets/*
+  
+  # 允许访问的数据
+  data_access:
+    - media_id

@@ -1,0 +1,11 @@
+{
+  "id": "multi-site-magnet",
+  "name": "磁力刮削器",
+  "version": "3.0.0",
+  "description": "支持多个磁力网站刮削（优先级：Kiteyuan -> Knaben -> SkrBT，支持反爬虫绕过）",
+  "author": "Media Manager",
+  "executable": "Magnet_Scraper.exe",
+  "id_patterns": [],
+  "supports_search": true,
+  "enabled": true
+}

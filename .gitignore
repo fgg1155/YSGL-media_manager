@@ -1,0 +1,129 @@
+# ============================================
+# 只保留 media_manager_app 和 media_manager_backend
+# ============================================
+
+# 排除根目录下的所有文件和文件夹
+/*
+
+# 但保留这些
+!media_manager_app/
+!media_manager_backend/
+!.gitignore
+!README.md
+
+# ============================================
+# Flutter/Dart (media_manager_app)
+# ============================================
+
+# 构建产物
+media_manager_app/.dart_tool/
+media_manager_app/build/
+media_manager_app/.flutter-plugins
+media_manager_app/.flutter-plugins-dependencies
+
+# 自动生成的文件
+media_manager_app/windows/flutter/generated_plugin_registrant.cc
+media_manager_app/windows/flutter/generated_plugins.cmake
+media_manager_app/linux/flutter/generated_plugin_registrant.cc
+media_manager_app/linux/flutter/generated_plugins.cmake
+media_manager_app/macos/Flutter/GeneratedPluginRegistrant.swift
+
+# Android 构建产物
+media_manager_app/android/app/build/
+media_manager_app/android/.gradle/
+media_manager_app/android/local.properties
+
+# iOS 构建产物
+media_manager_app/ios/Pods/
+media_manager_app/ios/.symlinks/
+media_manager_app/ios/Flutter/Flutter.framework
+media_manager_app/ios/Flutter/Flutter.podspec
+
+# Web 构建产物
+media_manager_app/web/flutter_service_worker.js
+
+# 依赖锁定文件（可选：如果团队需要统一依赖版本，可以注释掉这行）
+# media_manager_app/pubspec.lock
+
+# ============================================
+# Rust (media_manager_backend)
+# ============================================
+
+# 构建产物
+media_manager_backend/target/
+
+# 依赖锁定文件（可执行项目建议保留，库项目可以忽略）
+# media_manager_backend/Cargo.lock
+
+# ============================================
+# IDE 配置文件
+# ============================================
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# ============================================
+# 操作系统文件
+# ============================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.directory
+
+# ============================================
+# 数据库和日志文件
+# ============================================
+
+# SQLite
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# 日志文件
+*.log
+logs/
+
+# ============================================
+# 临时文件和测试文件
+# ============================================
+
+# 临时文件
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# 测试数据文件
+test_*.json
+test_*.html
+*_test_data/
+
+# 备份文件
+*.bak
+*.backup

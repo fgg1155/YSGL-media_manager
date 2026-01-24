@@ -1,0 +1,203 @@
+# Media Scraper Plugin Configuration
+
+# 网络配置
+network:
+  # 代理服务器（可选，留空则使用系统代理）
+  # 如果你的代理软件开启了系统代理/TUN模式，留空即可自动走代理
+  # 如果需要手动指定代理，取消注释并填写代理地址
+  proxy_server: null  # 例如: "http://127.0.0.1:7890"
+  
+  # 超时时间（秒）- 单个请求的超时
+  timeout: 10
+  
+  # 总超时时间（秒）- 所有并发请求的总超时
+  total_timeout: 20
+  
+  # 重试次数
+  retry: 1
+  
+  # 免代理镜像站点配置
+  proxy_free:
+    # AVSOX 免代理站点（无码影片数据库）
+    avsox:
+      - "https://avsox.click"
+    
+    # JAVLibrary 免代理站点（可选）
+    javlibrary: "https://w91h.com"
+    
+    # JAVDB 免代理站点（可选，按优先级排序）
+    # 可用站点: javdb456.com - javdb459.com, javdb561.com - javdb565.com
+    javdb:
+      - "https://javdb561.com"
+      - "https://javdb562.com"
+      - "https://javdb563.com"
+      - "https://javdb564.com"
+      - "https://javdb565.com"
+      - "https://javdb456.com"
+      - "https://javdb457.com"
+      - "https://javdb458.com"
+      - "https://javdb459.com"
+    
+    # JavBus 免代理站点（可选，按优先级排序）
+    # 永久域名 + 3个防屏蔽地址
+    javbus:
+      - "https://www.seedmm.cyou"
+      - "https://www.seejav.bond"
+      - "https://www.javsee.bond"
+
+# 刮削器配置
+scraper:
+  # 必填字段列表
+  required_fields:
+    - title
+    - release_date
+    - actors
+    - poster_url
+  
+  # 是否使用 JAVDB 封面（yes/no/fallback）
+  use_javdb_cover: "fallback"
+  
+  # 是否规范化演员名称
+  normalize_actor_names: true
+  
+  # 批量刮削并发数（默认5个线程，可增加到10-20）
+  max_concurrent_workers: 10
+  
+  # 刮削器能力配置（用于过滤刮削器）
+  capabilities:
+    # 支持电影搜索的刮削器列表
+    movie_search:
+      - theporndb
+      - gamma
+    
+    # 支持场景搜索的刮削器列表（所有刮削器都支持）
+    scene_search:
+      - theporndb
+      - mindgeek
+      - gamma
+      - hustler
+      - mariskax
+      - straplez
+      - adultprime
+
+# API Token 配置
+api_tokens:
+  # ThePornDB API Token（用于刮削欧美内容）
+  # 获取方式：访问 https://theporndb.net 注册账号后在设置中生成
+  theporndb_api_token: "AnBbCIb3S4Mb7HMvIMulXd6FEPBhColazNL3D7jg72375a2a"
+
+# 演员配置
+actor:
+  # 是否规范化演员名称
+  normalize_actor_names: true
+  
+  # 演员别名映射文件路径
+  actor_alias_file: "data/actress_alias.json"
+  
+  # 是否过滤男演员
+  filter_male_actors: true
+  
+  # 男演员列表文件路径（如果需要）
+  male_actors_file: "data/male_actors.json"
+
+# 数据清洗配置
+data_cleaning:
+  # 是否启用数据清洗
+  enabled: true
+  
+  # Genre 映射文件路径
+  genre_map_file: "data/genre_map.csv"
+  
+  # 是否移除标题中的演员名
+  remove_actors_from_title: true
+  
+  # 简介最大长度
+  max_overview_length: 1000
+
+# 缓存配置
+cache:
+  # 是否启用缓存
+  enabled: true
+  
+  # 缓存目录
+  cache_dir: "cache"
+
+# 演员刮削配置
+actor_scraper:
+  # 是否启用演员刮削
+  enabled: true
+  
+  # 元数据源配置
+  metadata:
+    # XSlist 配置（日本演员）
+    xslist:
+      enabled: true
+      timeout: 30
+      # Cloudflare cookie (从浏览器复制 cf_clearance 的值)
+      # 获取方法: 浏览器访问 xslist.org → F12 → Network → 复制 Cookie 中的 cf_clearance
+      cf_clearance: "RO7csbAtQXWhKFhwUzVgWqTpblRcc1.H1myDkDPbYWk-1768148298-1.2.1.1-wewViSbYjLGoB78VoXqtcbP1dmoPzwkxfUcN_B5UjHbLSbx0u2YhF6CXyC..EP741.FMPVUP530286rfI4bVfB9h7Xxkvlp3ih8a5tlFxir48SdNXAexU2T6pt3ZDESecBtgG.HA8p5drPC4BCHPC4tAPi3e01pjPQmUi3RACeW9ycVQy6CvCa1Cf1VSfCEtZlLwbvAj788JVLAl4yy.WDvRhBVlrsEeT97VlCaEfow"
+    
+    # ThePornDB 配置（欧美演员）
+    theporndb:
+      enabled: true
+      timeout: 10
+      # API Token 在 api_tokens 部分配置
+  
+  # 照片源配置
+  photos:
+    # Gfriends 配置（日本演员）
+    gfriends:
+      enabled: true
+      url: "https://raw.githubusercontent.com/gfriends/gfriends/master/"
+      use_ai_fix: true
+      timeout: 5
+  
+  # 批量处理配置
+  batch_size: 50
+  concurrent: 10
+  retry: 3
+
+  # 缓存过期时间（天）
+  ttl_days: 7
+
+# 翻译配置
+translator:
+  # 是否启用翻译功能
+  enabled: true
+  
+  # 需要翻译的字段（只翻译标题和简介，genres 已有映射表处理）
+  fields:
+    - title
+    - overview
+  
+  # LLM 翻译器配置（推荐，翻译质量最高）
+  llm:
+    api_key: "QC-fdc5b2d5d5ee9e038ae69cf6c62f329e-759cac9169d58c233b7a2276e4224c91"
+    base_url: "https://aiping.cn/api/v1"
+    model: "GLM-4-9B-0414"
+    max_retries: 2
+    timeout: 30
+  
+  # DeepL 翻译器配置（可选，高质量）
+  # deepl:
+  #   api_key: "your-deepl-api-key"
+  
+  # Google 翻译器配置（可选，免费备用，可能需要代理）
+  google:
+    enabled: false  # 默认禁用，因为可能需要代理
+    # proxy: "http://127.0.0.1:7890"  # 如果需要代理
+  
+  # 有道翻译器配置（可选，免费但不稳定）
+  youdao:
+    enabled: false  # 默认禁用，因为容易被限制
+
+# 日志配置
+logging:
+  # 日志级别（DEBUG/INFO/WARNING/ERROR）
+  level: "INFO"
+  
+  # 日志文件路径
+  log_file: "media_scraper.log"
+  
+  # 日志格式
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

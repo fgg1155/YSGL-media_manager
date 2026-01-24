@@ -1,0 +1,23 @@
+"""
+欧美内容刮削器模块
+"""
+
+# from .adultempire_scraper import AdultEmpireScraper  # 暂时禁用
+# from .iafd_scraper import IAFDScraper  # 暂时禁用
+from .theporndb_scraper import ThePornDBScraper
+from .MariskaX_Scraper import MariskaXScraper
+from .Straplez_Scraper import StraplezScraper
+from .AdultPrime_Scraper import AdultPrimeScraper
+from .MindGeek_Network_Scraper import (
+    MindGeekScraper, BrazzersScraper, RealityKingsScraper, BangBrosScraper,
+    DigitalPlaygroundScraper, MofosScraper, TwistysScraper, SexyHubScraper,
+    FakeHubScraper, MileHighScraper, BabesScraper, TransAngelsScraper, LetsDoeItScraper
+)
+
+__all__ = [
+    # 'AdultEmpireScraper', 'IAFDScraper',  # 暂时禁用
+    'ThePornDBScraper', 'MariskaXScraper', 'StraplezScraper', 'AdultPrimeScraper',
+    'MindGeekScraper', 'BrazzersScraper', 'RealityKingsScraper', 'BangBrosScraper',
+    'DigitalPlaygroundScraper', 'MofosScraper', 'TwistysScraper', 'SexyHubScraper',
+    'FakeHubScraper', 'MileHighScraper', 'BabesScraper', 'TransAngelsScraper', 'LetsDoeItScraper'
+]

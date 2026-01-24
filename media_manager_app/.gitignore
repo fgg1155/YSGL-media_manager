@@ -1,0 +1,53 @@
+# Flutter/Dart 项目忽略文件
+
+# Dart 工具
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+
+# Flutter 自动生成
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+
+# 构建产物
+/build/
+**/doc/api/
+
+# Android
+/android/.gradle/
+/android/app/build/
+/android/build/
+/android/local.properties
+/android/*.iml
+
+# iOS
+**/ios/Flutter/.last_build_id
+**/ios/Pods/
+**/ios/.symlinks/
+
+# Windows
+/windows/flutter/ephemeral/
+/windows/x64/
+
+# 日志和临时文件
+*.log
+*.class
+*.pyc
+*.swp
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.atom/
+.buildlog/
+.history
+.svn/
+migrate_working_dir/
+
+# 符号和混淆
+app.*.symbols
+app.*.map.json

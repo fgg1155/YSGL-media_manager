@@ -1,0 +1,18 @@
+{
+  "id": "media_scraper",
+  "name": "媒体刮削器",
+  "version": "1.0.0",
+  "description": "通用媒体元数据刮削插件，支持日本AV（JAV）和欧美内容，集成 Fanza、JavBus、JavLibrary、JAVDBscrapers",
+  "author": "Media Manager",
+  "executable": "run_plugin.bat",
+  "id_patterns": [
+    "[A-Z]{2,6}-\\d{3,5}",
+    "\\d{2}[A-Z]{2,10}\\d{2,5}",
+    "FC2-PPV-\\d{5,7}",
+    "HEYZO-\\d{4}",
+    "HEYDOUGA-\\d{4}-\\d{3,5}",
+    "(RED|SKY|EX)-\\d{3,4}"
+  ],
+  "supports_search": true,
+  "enabled": true
+}
