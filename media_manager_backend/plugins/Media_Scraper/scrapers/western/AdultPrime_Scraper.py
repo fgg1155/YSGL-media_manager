@@ -25,8 +25,8 @@ class AdultPrimeScraper(BaseScraper):
     """AdultPrime Network 刮削器"""
     
     name = 'adultprime'
-    base_url = 'https://adultprime.com'
-    search_url_template = 'https://adultprime.com/studios/search?q={}'
+    base_url = None  # 将从配置文件读取
+    search_url_template = None  # 将从配置文件读取
     
     def __init__(self, config: Dict[str, Any], use_scraper: bool = True):
         """
@@ -38,7 +38,42 @@ class AdultPrimeScraper(BaseScraper):
         """
         super().__init__(config, use_scraper=use_scraper)
         
+        # 加载站点配置
+        self._load_sites_config()
+        
+        # 如果未从配置读取到，使用默认值
+        if not self.base_url:
+            self.base_url = 'https://adultprime.com'
+            logger.warning("未从配置文件读取到 main_api，使用默认值")
+        
+        self.search_url_template = f'{self.base_url}/studios/search?q={{}}'
+        
         self.logger.info("AdultPrime scraper initialized")
+    
+    def _load_sites_config(self):
+        """加载站点配置"""
+        config_path = Path(__file__).parent.parent.parent / 'config' / 'site' / 'AdultPrime_sites.csv'
+        
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+            
+            # 跳过注释和标题行
+            for line in lines:
+                line = line.strip()
+                if not line or line.startswith('#') or line.startswith('site_name'):
+                    continue
+                
+                parts = [p.strip() for p in line.split(',')]
+                if len(parts) >= 7:
+                    main_api = parts[6]
+                    if main_api:
+                        self.base_url = main_api
+                        logger.info(f"从配置文件读取 AdultPrime 主站 URL: {main_api}")
+                        break
+            
+        except Exception as e:
+            logger.error(f"Failed to load AdultPrime sites config: {e}")
     
     def _scrape_impl(self, query: str) -> Optional[ScrapeResult]:
         """

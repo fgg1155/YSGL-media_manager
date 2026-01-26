@@ -1,11 +1,11 @@
 # AdultPrime Network Sites Configuration 共计105个站点（104个系列站点 + 1个网络主站）
-# Format: site_name,domain,code,network,enabled,priority
+# Format: site_name,domain,code,network,enabled,priority,main_api
 # Source: AdultPrimeNetwork.cs from AdultScraper
 
-site_name,domain,code,network,enabled,priority
+site_name,domain,code,network,enabled,priority,main_api
 
 # AdultPrime Network (104 sites + 1 main site)
-AdultPrime,adultprime.com,,AdultPrime,true,100
+AdultPrime,adultprime.com,,AdultPrime,true,100,https://adultprime.com
 AdultPrime Originals,adultprime.com,,AdultPrime,true,90
 4K CFNM,4kcfnm.com,,AdultPrime,true,80
 Arousins,arousins.com,,AdultPrime,true,75

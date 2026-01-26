@@ -1,0 +1,7 @@
+# MariskaX Sites Configuration
+# Format: site_name,domain,code,network,enabled,priority,main_api
+
+site_name,domain,code,network,enabled,priority,main_api
+
+# MariskaX Main Site
+MariskaX,tour.mariskax.com,,MariskaX,true,100,https://tour.mariskax.com

@@ -32,12 +32,12 @@ class MindGeekScraper(BaseScraper):
     """MindGeek 网络刮削器"""
     
     name = 'mindgeek'
-    base_url = 'https://site-api.project1service.com'
+    base_url = None  # 将从 CSV 配置文件读取
     
-    # API 端点
-    SEARCH_URL_TEMPLATE = "https://site-api.project1service.com/v2/releases?limit=30&offset=0&search={}&type={}"
-    SCENE_URL = "https://site-api.project1service.com/v2/releases/{}"
-    MODEL_URL = "https://site-api.project1service.com/v1/actors?id={}&blockId=118061&blockName=PlayerBlock&pageType=WATCH_TRAILER"
+    # API 端点模板（将在 __init__ 中根据 base_url 动态构建）
+    SEARCH_URL_TEMPLATE = None
+    SCENE_URL = None
+    MODEL_URL = None
     
     # JWT 令牌相关
     TOKEN_VALIDITY_MS = 10740000  # 约3小时
@@ -56,8 +56,23 @@ class MindGeekScraper(BaseScraper):
         
         super().__init__(config, use_scraper=use_scraper)
         
-        # 加载站点配置
+        # 加载站点配置（会设置 base_url）
         self.sites_config = self._load_sites_config()
+        
+        # 如果 base_url 未从配置读取到，使用默认值
+        if not self.base_url:
+            self.base_url = 'https://site-api.project1service.com'
+            logger.warning("未从配置文件读取到 main_api，使用默认值")
+        
+        # 根据 base_url 动态构建 API 端点
+        self.SEARCH_URL_TEMPLATE = f"{self.base_url}/v2/releases?limit=30&offset=0&search={{}}&type={{}}"
+        self.SCENE_URL = f"{self.base_url}/v2/releases/{{}}"
+        self.MODEL_URL = f"{self.base_url}/v1/actors?id={{}}&blockId=118061&blockName=PlayerBlock&pageType=WATCH_TRAILER"
+        
+        logger.info(f"MindGeek API 端点:")
+        logger.info(f"  - Base URL: {self.base_url}")
+        logger.info(f"  - Search: {self.SEARCH_URL_TEMPLATE.split('?')[0]}")
+        logger.info(f"  - Scene: {self.SCENE_URL.replace('{}', '{id}')}")
         
         # JWT 令牌管理 - 支持多个站点
         self._tokens = {}  # 存储多个站点的 token
@@ -144,6 +159,13 @@ class MindGeekScraper(BaseScraper):
                 parts = [p.strip() for p in line.split(',')]
                 if len(parts) >= 6:
                     site_name, domain, code, network, enabled, priority = parts[:6]
+                    main_api = parts[6] if len(parts) > 6 else None
+                    
+                    # 如果是第一行且有 main_api，设置为 base_url
+                    if main_api and not sites:
+                        self.base_url = main_api
+                        self.logger.info(f"从 CSV 读取 API URL: {main_api}")
+                    
                     if enabled.lower() == 'true':
                         sites[site_name.lower()] = {
                             'name': site_name,

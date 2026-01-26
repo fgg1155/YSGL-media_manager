@@ -174,11 +174,17 @@ class MediaItem {
       originalTitle: originalTitle is _Undefined ? this.originalTitle : originalTitle as String?,
       year: year is _Undefined ? this.year : year as int?,
       mediaType: mediaType ?? this.mediaType,
-      genres: genres ?? this.genres,
+      genres: genres != null 
+          ? (genres is List<String> ? genres : (genres as List).cast<String>()) 
+          : this.genres,
       rating: rating is _Undefined ? this.rating : rating as double?,
       voteCount: voteCount is _Undefined ? this.voteCount : voteCount as int?,
       posterUrl: posterUrl is _Undefined ? this.posterUrl : posterUrl as String?,
-      backdropUrl: backdropUrl is _Undefined ? this.backdropUrl : backdropUrl as List<String>,
+      backdropUrl: backdropUrl is _Undefined 
+          ? this.backdropUrl 
+          : (backdropUrl is List 
+              ? (backdropUrl as List).cast<String>() 
+              : backdropUrl as List<String>),
       overview: overview is _Undefined ? this.overview : overview as String?,
       runtime: runtime is _Undefined ? this.runtime : runtime as int?,
       releaseDate: releaseDate is _Undefined ? this.releaseDate : releaseDate as String?,
@@ -192,7 +198,9 @@ class MediaItem {
       externalIds: externalIds ?? this.externalIds,
       playLinks: playLinks ?? this.playLinks,
       downloadLinks: downloadLinks ?? this.downloadLinks,
-      previewUrls: previewUrls ?? this.previewUrls,
+      previewUrls: previewUrls != null 
+          ? (previewUrls is List<String> ? previewUrls : (previewUrls as List).cast<String>()) 
+          : this.previewUrls,
       previewVideoUrls: previewVideoUrls ?? this.previewVideoUrls,
       coverVideoUrl: coverVideoUrl is _Undefined ? this.coverVideoUrl : coverVideoUrl as String?,
       studio: studio is _Undefined ? this.studio : studio as String?,

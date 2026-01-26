@@ -15,13 +15,11 @@ import re
 import requests
 import urllib.parse
 import yaml
-import socket
 from datetime import datetime
 from typing import Dict, List, Optional, Any, Tuple
 import logging
 import sys
 from pathlib import Path
-from urllib3.util.connection import create_connection
 
 # Add parent directories to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -30,51 +28,6 @@ from base_scraper import BaseScraper
 from web.request import Request
 
 logger = logging.getLogger(__name__)
-
-# 全局 IP 映射字典
-IP_MAPPING = {}
-original_create_connection = None
-
-def setup_ip_mapping():
-    """设置 IP 映射"""
-    global IP_MAPPING, original_create_connection
-    
-    yaml_path = Path(__file__).parent.parent.parent / "config" / "map" / "ip_mapping.yaml"
-    
-    try:
-        with open(yaml_path, 'r', encoding='utf-8') as f:
-            data = yaml.safe_load(f)
-            if isinstance(data, dict):
-                IP_MAPPING = {k: v for k, v in data.items() if isinstance(v, str) and not k.startswith('#')}
-                logger.info(f"Loaded {len(IP_MAPPING)} IP mappings")
-    except Exception as e:
-        logger.warning(f"无法读取 IP 映射文件: {e}")
-        return
-    
-    if IP_MAPPING and original_create_connection is None:
-        # 保存原始连接函数
-        original_create_connection = create_connection
-        
-        # 替换连接函数
-        import urllib3.util.connection
-        urllib3.util.connection.create_connection = custom_create_connection
-        logger.info("IP 映射已激活")
-
-def custom_create_connection(address, timeout=socket._GLOBAL_DEFAULT_TIMEOUT, source_address=None, socket_options=None):
-    """自定义连接函数，支持 IP 映射"""
-    host, port = address
-    
-    # 检查是否需要 IP 映射
-    if host in IP_MAPPING:
-        mapped_ip = IP_MAPPING[host]
-        logger.debug(f"IP 映射: {host} -> {mapped_ip}")
-        address = (mapped_ip, port)
-    
-    # 调用原始连接函数
-    return original_create_connection(address, timeout, source_address, socket_options)
-
-# 在模块加载时设置 IP 映射
-setup_ip_mapping()
 
 
 # Simple site config class for Hustler sites
@@ -238,16 +191,20 @@ class AbstractHustlerScraper(BaseScraper):
     
     name = 'hustler'
     
-    # API 配置（类属性）
-    WP_API_BASE = "https://hustlerunlimited.com/wp-json/wp/v2"
-    SEARCH_API_URL = f"{WP_API_BASE}/search"
-    VIDEOS_API_URL = f"{WP_API_BASE}/videos"
+    # API 配置（类属性，将从 CSV 配置文件读取）
+    WP_API_BASE = None
+    SEARCH_API_URL = None
+    VIDEOS_API_URL = None
     IMAGE_URL_PREFIX = "https://cdn-hustlernetwork.metartnetwork.com"
     
     def __init__(self, site_config: Optional[HustlerSiteConfig] = None, config: Dict[str, Any] = None):
         # Initialize base scraper with config
         if config is None:
             config = {}
+        
+        # 加载 IP 映射配置
+        self._load_ip_mapping(config)
+        
         super().__init__(config, use_scraper=False)
         
         self.site_config = site_config
@@ -263,7 +220,15 @@ class AbstractHustlerScraper(BaseScraper):
             # 使用默认的 Hustler 主站
             self.base_url = "https://hustler.com"
         
-        # Initialize Hustler API (使用类属性中的 API 配置)
+        # 如果 WP_API_BASE 还未设置（_load_sites_config 中会设置），使用默认值
+        if not self.WP_API_BASE:
+            self.WP_API_BASE = "https://hustlerunlimited.com/wp-json/wp/v2"
+            logger.warning("未从配置文件读取到 main_api，使用默认值")
+        
+        self.SEARCH_API_URL = f"{self.WP_API_BASE}/search"
+        self.VIDEOS_API_URL = f"{self.WP_API_BASE}/videos"
+        
+        # Initialize Hustler API
         self.hustler_api = HustlerAPI(
             base_url=self.base_url,
             wp_api_base=self.WP_API_BASE,
@@ -302,29 +267,62 @@ class AbstractHustlerScraper(BaseScraper):
                             'priority': int(priority) if priority.isdigit() else 50,
                             'main_api': main_api if main_api else None
                         }
+                        
+                        # 如果是第一行且有 main_api，设置类属性
+                        if main_api and not AbstractHustlerScraper.WP_API_BASE:
+                            AbstractHustlerScraper.WP_API_BASE = main_api
+                            logger.info(f"从配置文件读取 API 地址: {main_api}")
             
             logger.info(f"Loaded {len(sites)} Hustler sites from config")
-            
-            # 查找主站配置
-            main_site = None
-            for site_info in sites.values():
-                if site_info.get('main_api'):
-                    main_site = site_info
-                    logger.info(f"Found main site: {site_info['name']} - API: {site_info['main_api']}")
-                    break
-            
-            # 如果找到主站配置，更新类属性
-            if main_site and main_site['main_api']:
-                self.WP_API_BASE = main_site['main_api']
-                self.SEARCH_API_URL = f"{self.WP_API_BASE}/search"
-                self.VIDEOS_API_URL = f"{self.WP_API_BASE}/videos"
-                logger.info(f"Updated API base from config: {self.WP_API_BASE}")
-            
             return sites
             
         except Exception as e:
             logger.error(f"Failed to load Hustler sites config: {e}")
             return {}
+    
+    def _load_ip_mapping(self, config: Dict[str, Any]):
+        """加载 IP 映射配置"""
+        import yaml
+        
+        # 确保 network 配置存在
+        if 'network' not in config:
+            config['network'] = {}
+        
+        # 如果配置中已经有 ip_mapping，保留它（优先使用传入的配置）
+        existing_mapping = config['network'].get('ip_mapping', {})
+        
+        try:
+            # 加载 IP 映射文件: config/map/ip_mapping.yaml
+            ip_mapping_path = Path(__file__).parent.parent.parent / 'config' / 'map' / 'ip_mapping.yaml'
+            
+            if ip_mapping_path.exists():
+                with open(ip_mapping_path, 'r', encoding='utf-8') as f:
+                    ip_mapping_config = yaml.safe_load(f) or {}
+                
+                # 过滤掉注释和空值
+                ip_mapping = {}
+                for domain, ip in ip_mapping_config.items():
+                    if isinstance(domain, str) and isinstance(ip, str) and not domain.startswith('#'):
+                        ip_mapping[domain] = ip
+                
+                # 合并：文件中的映射 + 已有的映射（已有的优先）
+                ip_mapping.update(existing_mapping)
+                
+                if ip_mapping:
+                    config['network']['ip_mapping'] = ip_mapping
+                    logger.info(f"Loaded IP mapping from {ip_mapping_path}: {len(ip_mapping)} domains")
+                else:
+                    logger.info("No valid IP mappings found")
+            else:
+                # 文件不存在，但如果有传入的映射，仍然使用
+                if existing_mapping:
+                    logger.info(f"IP mapping file not found, using provided mapping: {len(existing_mapping)} domains")
+                else:
+                    logger.info(f"IP mapping file not found at {ip_mapping_path}, using direct connection")
+                
+        except Exception as e:
+            logger.warning(f"Failed to load IP mapping: {e}")
+            config['network']['ip_mapping'] = {}
     
     def _scrape_impl(self, query: str, **kwargs) -> List[Dict[str, Any]]:
         """Implementation of abstract method from BaseScraper"""
@@ -684,11 +682,17 @@ class AbstractHustlerScraper(BaseScraper):
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
             }
             
+            # 从 WP_API_BASE 提取主域名
+            # 例如: https://hustlerunlimited.com/wp-json/wp/v2 -> https://hustlerunlimited.com
+            import re
+            domain_match = re.match(r'(https?://[^/]+)', self.WP_API_BASE)
+            base_domain = domain_match.group(1) if domain_match else "https://hustlerunlimited.com"
+            
             # 策略1: 先尝试搜索列表页（优先，使用标题搜索）
             if video_title:
                 # 使用标题搜索
                 search_query = urllib.parse.quote(video_title)
-                search_url = f"https://hustlerunlimited.com/videos/?_sf_s={search_query}"
+                search_url = f"{base_domain}/videos/?_sf_s={search_query}"
                 logger.info(f"[Hustler] 尝试搜索列表页（使用标题）: {search_url}")
                 
                 try:
@@ -735,7 +739,7 @@ class AbstractHustlerScraper(BaseScraper):
                 logger.info(f"[Hustler] 未提供标题，跳过搜索列表页，直接尝试主列表页")
             
             # 策略2: 降级到主列表页（备用）
-            list_url = "https://hustlerunlimited.com/videos/"
+            list_url = f"{base_domain}/videos/"
             logger.info(f"[Hustler] 抓取主列表页查找视频 ID: {list_url}")
             
             response = requests.get(list_url, headers=headers, timeout=10)
@@ -811,6 +815,10 @@ class AbstractHustlerScraper(BaseScraper):
             from bs4 import BeautifulSoup
             import re
             
+            # 从 WP_API_BASE 提取主域名
+            domain_match = re.match(r'(https?://[^/]+)', self.WP_API_BASE)
+            base_domain = domain_match.group(1) if domain_match else "https://hustlerunlimited.com"
+            
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -847,7 +855,7 @@ class AbstractHustlerScraper(BaseScraper):
                         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                         'Accept': 'application/json',
                         'Referer': video_url,
-                        'Origin': 'https://hustlerunlimited.com'
+                        'Origin': base_domain  # 使用动态域名
                     }
                     
                     logger.info(f"[Hustler] 调用 Dacast API 获取预览视频 URL")
@@ -890,8 +898,8 @@ class AbstractHustlerScraper(BaseScraper):
             video_id = self._get_video_id_from_list_page(video_url, video_title)
             
             if video_id:
-                # 构建封面图片 URL
-                thumbnail_url = f"https://hustlerunlimited.com/hh-thumbnail/{video_id}.jpg"
+                # 构建封面图片 URL（使用动态域名）
+                thumbnail_url = f"{base_domain}/hh-thumbnail/{video_id}.jpg"
                 images.append(thumbnail_url)
                 logger.info(f"[Hustler] 构建封面图片 URL: {thumbnail_url}")
                 

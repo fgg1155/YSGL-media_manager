@@ -24,7 +24,7 @@ class MariskaXScraper(BaseScraper):
     """MariskaX 刮削器"""
     
     name = 'mariskax'
-    base_url = 'https://tour.mariskax.com'
+    base_url = None  # 将从配置文件读取
     
     def __init__(self, config: Dict[str, Any], use_scraper: bool = True):
         """
@@ -35,7 +35,41 @@ class MariskaXScraper(BaseScraper):
             use_scraper: 是否使用 cloudscraper（推荐开启）
         """
         super().__init__(config, use_scraper=use_scraper)
+        
+        # 加载站点配置
+        self._load_sites_config()
+        
+        # 如果未从配置读取到，使用默认值
+        if not self.base_url:
+            self.base_url = 'https://tour.mariskax.com'
+            logger.warning("未从配置文件读取到 main_api，使用默认值")
+        
         self.logger.info("MariskaX scraper initialized")
+    
+    def _load_sites_config(self):
+        """加载站点配置"""
+        config_path = Path(__file__).parent.parent.parent / 'config' / 'site' / 'MariskaX_sites.csv'
+        
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+            
+            # 跳过注释和标题行
+            for line in lines:
+                line = line.strip()
+                if not line or line.startswith('#') or line.startswith('site_name'):
+                    continue
+                
+                parts = [p.strip() for p in line.split(',')]
+                if len(parts) >= 7:
+                    main_api = parts[6]
+                    if main_api:
+                        self.base_url = main_api
+                        logger.info(f"从配置文件读取 MariskaX 主站 URL: {main_api}")
+                        break
+            
+        except Exception as e:
+            logger.error(f"Failed to load MariskaX sites config: {e}")
     
     def _scrape_impl(self, slug: str) -> Optional[ScrapeResult]:
         """

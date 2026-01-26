@@ -242,6 +242,11 @@ class PluginMain:
         series = request.get('series')
         content_type_hint = request.get('content_type')
         
+        # 规范化系列名：移除空格（例如 "Strap Lez" -> "StrapLez"）
+        if series:
+            series = series.replace(' ', '')
+            self.logger.debug(f"规范化系列名: {request.get('series')} -> {series}")
+        
         if not id_or_title:
             return {
                 'success': False,
@@ -821,13 +826,14 @@ class PluginMain:
                 - title: 标题（可选）
                 - series: 系列名（可选）
                 - release_date: 发布日期（可选）
-            scrape_mode: 刮削方式（code/title/series_date/series_title）
+            scrape_mode: 刮削方式（code/title/series_date/series_title/auto）
             content_type: 内容类型（Scene/Movie）
         
         Returns:
             刮削结果字典
         
         逻辑：
+        - auto: 自动判断（优先级：code > series+date > series+title > title）
         - code: 使用 code 字段
         - title: 使用 title 字段
         - series_date: 使用 系列.YY.MM.DD 格式
@@ -838,6 +844,35 @@ class PluginMain:
         title = media_info.get('title', '')
         series = media_info.get('series')  # 获取系列名
         release_date = media_info.get('release_date')  # 获取发布日期
+        
+        # 规范化系列名：移除空格（例如 "Strap Lez" -> "StrapLez"）
+        if series:
+            original_series = series
+            series = series.replace(' ', '')
+            if original_series != series:
+                self.logger.debug(f"规范化系列名: {original_series} -> {series}")
+        
+        # 如果是 auto 模式，根据字段自动判断
+        if scrape_mode == 'auto':
+            if code:
+                scrape_mode = 'code'
+                self.logger.info(f"Auto mode: 检测到 code 字段，使用 code 模式")
+            elif series and release_date:
+                scrape_mode = 'series_date'
+                self.logger.info(f"Auto mode: 检测到 series+date 字段，使用 series_date 模式")
+            elif series and title:
+                scrape_mode = 'series_title'
+                self.logger.info(f"Auto mode: 检测到 series+title 字段，使用 series_title 模式")
+            elif title:
+                scrape_mode = 'title'
+                self.logger.info(f"Auto mode: 检测到 title 字段，使用 title 模式")
+            else:
+                self.logger.warning(f"Auto mode: 无法判断刮削模式，跳过")
+                return {
+                    'media_id': media_id,
+                    'success': False,
+                    'error': 'No valid fields for scraping'
+                }
         
         # 根据 scrape_mode 选择搜索关键词
         search_key = None

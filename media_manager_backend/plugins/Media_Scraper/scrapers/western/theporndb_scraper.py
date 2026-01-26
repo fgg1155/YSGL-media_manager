@@ -793,7 +793,7 @@ class ThePornDBScraper(BaseScraper):
         例如：vixen-petite-eve-shares-a-cock-with-sexy-assistant-rikako
         
         Args:
-            title: 标题字符串
+            title: 标题字符串（可能包含系列名前缀，如 "BrazzersExxtra-Title"）
             content_type_hint: 内容类型提示（Scene/Movie）
             series: 系列名（可选）
         
@@ -803,8 +803,26 @@ class ThePornDBScraper(BaseScraper):
         try:
             # 构造 slug
             if series:
-                # 有系列名：系列名-标题
-                slug_text = f"{series} {title}"
+                # 有系列名：需要从 title 中移除系列名前缀
+                # 1. 规范化系列名（移除空格和特殊字符）
+                normalized_series = re.sub(r'[^\w]', '', series).lower()
+                
+                # 2. 检查 title 是否以系列名开头（忽略大小写和分隔符）
+                # 尝试匹配 "系列名-标题" 或 "系列名.标题" 或 "系列名 标题" 格式
+                title_lower = title.lower()
+                clean_title = title
+                
+                # 尝试移除系列名前缀（支持多种分隔符）
+                for separator in ['-', '.', ' ', '_']:
+                    prefix = series.lower() + separator
+                    if title_lower.startswith(prefix):
+                        clean_title = title[len(prefix):]
+                        self.logger.debug(f"从标题中移除系列名前缀: {series}{separator}")
+                        break
+                
+                # 3. 构造 slug：系列名-标题
+                slug_text = f"{series} {clean_title}"
+                self.logger.debug(f"构造 slug 文本: series={series}, clean_title={clean_title}")
             else:
                 # 没有系列名：纯标题
                 slug_text = title
@@ -816,7 +834,7 @@ class ThePornDBScraper(BaseScraper):
             normalized_slug = re.sub(r'-+', '-', normalized_slug)  # 多个连字符合并为一个
             normalized_slug = normalized_slug.strip('-')  # 移除首尾连字符
             
-            self.logger.debug(f"构造的 slug: {normalized_slug}")
+            self.logger.info(f"构造的 slug: {normalized_slug}")
             
             # 根据 content_type_hint 决定搜索顺序
             if content_type_hint == "Movie":

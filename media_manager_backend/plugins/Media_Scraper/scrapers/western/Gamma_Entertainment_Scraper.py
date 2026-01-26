@@ -285,26 +285,37 @@ class AlgoliaAPI:
         
         注意：
         - Algolia 的 release_date 字段是字符串格式（YYYY-MM-DD）
-        - 我们先搜索所有结果，然后在客户端过滤日期
+        - 使用 facetFilters 按日期精确过滤
         """
         if not self.app_id or not self.api_key:
             if not self._extract_api_credentials():
                 raise Exception(f"Failed to extract Algolia credentials from {self.referer_url}")
         
-        # 搜索空字符串获取所有结果
-        # 注意：这里不能使用 numericFilters，因为 release_date 是字符串
-        params = f"query=&hitsPerPage={max_results}"
+        # 使用 facetFilters 按日期精确过滤
+        # 注意：release_date 是字符串类型的 facet
+        facet_filters = [f'"release_date:{target_date_str}"']
         
         # Add content source filters if available
         if self.content_sources:
-            facet_filters = []
             for source in self.content_sources:
                 facet_filters.append(f'"availableOnSite:{source}"')
-            
-            facet_filter_str = f'[[{",".join(facet_filters)}]]'
-            params += f"&facets={urllib.parse.quote('[\"availableOnSite\"]')}"
-            params += f"&maxValuesPerFacet=100"
-            params += f"&facetFilters={urllib.parse.quote(facet_filter_str)}"
+        
+        # 构建 facetFilters 参数
+        # 格式: [["release_date:2025-12-21"],["availableOnSite:source1","availableOnSite:source2"]]
+        if len(facet_filters) > 1:
+            # 有多个过滤条件，需要分组
+            date_filter = f'[{facet_filters[0]}]'
+            source_filters = ','.join(facet_filters[1:])
+            facet_filter_str = f'[{date_filter},[{source_filters}]]'
+        else:
+            # 只有日期过滤
+            facet_filter_str = f'[{facet_filters[0]}]'
+        
+        # 构建搜索参数
+        params = f"query=&hitsPerPage={max_results}"
+        params += f"&facets={urllib.parse.quote('[\"release_date\",\"availableOnSite\"]')}"
+        params += f"&maxValuesPerFacet=100"
+        params += f"&facetFilters={urllib.parse.quote(facet_filter_str)}"
         
         # Build request payload
         payload = {
@@ -333,17 +344,23 @@ class AlgoliaAPI:
             data = self._make_api_request(payload, headers)
             
             if data and 'results' in data and len(data['results']) > 0:
-                all_hits = data['results'][0].get('hits', [])
+                hits = data['results'][0].get('hits', [])
                 
-                # 在客户端过滤日期
-                matched_hits = []
-                for hit in all_hits:
-                    release_date = hit.get('release_date', '')
-                    if isinstance(release_date, str) and release_date.startswith(target_date_str):
-                        matched_hits.append(hit)
+                logger.info(f"✓ 按日期搜索成功: 找到 {len(hits)} 个结果（日期: {target_date_str}）")
                 
-                logger.info(f"✓ 按日期搜索成功: 总共 {len(all_hits)} 个结果，匹配 {len(matched_hits)} 个")
-                return matched_hits
+                # 调试：输出前3个结果
+                if hits:
+                    logger.debug(f"前3个结果:")
+                    for i, hit in enumerate(hits[:3]):
+                        title = hit.get('title', '')
+                        release_date = hit.get('release_date', '')
+                        logger.debug(f"  {i+1}. {title} - {release_date}")
+                else:
+                    logger.warning(f"未找到日期为 {target_date_str} 的内容")
+                
+                return hits
+            
+            return []
             
             return []
             
@@ -465,6 +482,10 @@ class AbstractGammaEntertainmentScraper(BaseScraper):
         # Initialize base scraper with config
         if config is None:
             config = {}
+        
+        # 加载 IP 映射配置（用于 Algolia API）
+        self._load_ip_mapping(config)
+        
         # 启用 cloudscraper 绕过 Cloudflare（Evilangel 等站点需要）
         super().__init__(config, use_scraper=True)
         
@@ -516,6 +537,50 @@ class AbstractGammaEntertainmentScraper(BaseScraper):
         # Override image prefix for specific networks
         if "evilangel" in site_config.domain.lower():
             self.image_url_prefix = "https://images01-evilangel.gammacdn.com/movies"
+    
+    def _load_ip_mapping(self, config: Dict[str, Any]):
+        """加载 IP 映射配置（用于 Algolia API）"""
+        import yaml
+        
+        # 确保 network 配置存在
+        if 'network' not in config:
+            config['network'] = {}
+        
+        # 如果配置中已经有 ip_mapping，保留它（优先使用传入的配置）
+        existing_mapping = config['network'].get('ip_mapping', {})
+        
+        try:
+            # 加载 IP 映射文件: config/map/ip_mapping.yaml
+            ip_mapping_path = Path(__file__).parent.parent.parent / 'config' / 'map' / 'ip_mapping.yaml'
+            
+            if ip_mapping_path.exists():
+                with open(ip_mapping_path, 'r', encoding='utf-8') as f:
+                    ip_mapping_config = yaml.safe_load(f) or {}
+                
+                # 过滤掉注释和空值
+                ip_mapping = {}
+                for domain, ip in ip_mapping_config.items():
+                    if isinstance(domain, str) and isinstance(ip, str) and not domain.startswith('#'):
+                        ip_mapping[domain] = ip
+                
+                # 合并：文件中的映射 + 已有的映射（已有的优先）
+                ip_mapping.update(existing_mapping)
+                
+                if ip_mapping:
+                    config['network']['ip_mapping'] = ip_mapping
+                    logger.info(f"Loaded IP mapping from {ip_mapping_path}: {len(ip_mapping)} domains")
+                else:
+                    logger.info("No valid IP mappings found")
+            else:
+                # 文件不存在，但如果有传入的映射，仍然使用
+                if existing_mapping:
+                    logger.info(f"IP mapping file not found, using provided mapping: {len(existing_mapping)} domains")
+                else:
+                    logger.info(f"IP mapping file not found at {ip_mapping_path}, using direct connection")
+                
+        except Exception as e:
+            logger.warning(f"Failed to load IP mapping: {e}")
+            config['network']['ip_mapping'] = {}
     
     def _load_sites_config(self) -> Dict[str, Dict[str, Any]]:
         """加载站点配置"""

@@ -1,5 +1,5 @@
 # Media Scraper Plugin Configuration
-
+#################################################################################
 # 网络配置
 network:
   # 代理服务器（可选，留空则使用系统代理）
@@ -15,7 +15,31 @@ network:
   
   # 重试次数
   retry: 1
+
+#################################################################################  
+  # DNS 映射配置（用于 Playwright 浏览器）
+  # 格式: 域名: IP地址
+  dns_mapping:
+    # MetArt Network 站点
+    www.metartnetwork.com: "207.66.141.189"
+    www.metart.com: "207.66.141.189"
+    www.metartx.com: "207.66.141.189"
+    www.sexart.com: "207.66.141.189"
+    www.thelifeerotic.com: "207.66.141.189"
+    www.vivthomas.com: "207.66.141.189"
+    www.straplez.com: "207.66.141.189"
+    www.errotica-archives.com: "207.66.141.189"
+    www.domai.com: "207.66.141.189"
+    www.goddessnudes.com: "207.66.141.189"
+    www.eroticbeauty.com: "207.66.141.189"
+    www.lovehairy.com: "207.66.141.189"
+    www.alsscan.com: "207.66.141.189"
+    www.rylskyart.com: "207.66.141.189"
+    www.eternaldesire.com: "207.66.141.189"
+    www.stunning18.com: "207.66.141.189"
   
+  #################################################################################
+
   # 免代理镜像站点配置
   proxy_free:
     # AVSOX 免代理站点（无码影片数据库）
@@ -45,6 +69,7 @@ network:
       - "https://www.seejav.bond"
       - "https://www.javsee.bond"
 
+#################################################################################
 # 刮削器配置
 scraper:
   # 必填字段列表
@@ -63,29 +88,70 @@ scraper:
   # 批量刮削并发数（默认5个线程，可增加到10-20）
   max_concurrent_workers: 10
   
+  #################################################################################
   # 刮削器能力配置（用于过滤刮削器）
   capabilities:
+    # === 欧美内容刮削器能力 ===
+    
     # 支持电影搜索的刮削器列表
     movie_search:
       - theporndb
       - gamma
     
-    # 支持场景搜索的刮削器列表（所有刮削器都支持）
+    # 支持场景搜索的刮削器列表
     scene_search:
       - theporndb
       - mindgeek
       - gamma
       - hustler
       - mariskax
-      - straplez
       - adultprime
+      - metart_network
+    
+    # 支持纯标题搜索的刮削器列表（无系列名时使用）
+    # 这些刮削器可以通过标题搜索内容（如 "Scene Title"）
+    title_search:
+      - theporndb
+      - adultprime
+    
+    # 支持系列+标题搜索的刮削器列表
+    # 这些刮削器可以通过系列名+标题搜索内容（如 "Brazzers - Scene Title"）
+    series_title_search:
+      - theporndb
+      - mindgeek
+      - gamma
+      - hustler
+      - mariskax
+      - adultprime
+      - metart_network
+    
+    # 支持系列+日期搜索的刮削器列表
+    # 这些刮削器可以通过日期精确搜索内容（如 "StrapLez.25.10.09"）
+    series_date_search:
+      - theporndb
+      - gamma
+      - hustler
+      - adultprime
+    
+    # === JAV 内容刮削器能力 ===
+    
+    # 支持番号搜索的刮削器列表
+    # 这些刮削器可以通过番号搜索 JAV 内容（如 "IPX-177"）
+    jav_code_search:
+      - javbus
+      - javdb
+      - javlibrary
+      - avsox
+      - fanza
 
+#################################################################################
 # API Token 配置
 api_tokens:
   # ThePornDB API Token（用于刮削欧美内容）
   # 获取方式：访问 https://theporndb.net 注册账号后在设置中生成
   theporndb_api_token: "AnBbCIb3S4Mb7HMvIMulXd6FEPBhColazNL3D7jg72375a2a"
 
+#################################################################################
 # 演员配置
 actor:
   # 是否规范化演员名称
@@ -100,6 +166,7 @@ actor:
   # 男演员列表文件路径（如果需要）
   male_actors_file: "data/male_actors.json"
 
+#################################################################################
 # 数据清洗配置
 data_cleaning:
   # 是否启用数据清洗
@@ -114,6 +181,7 @@ data_cleaning:
   # 简介最大长度
   max_overview_length: 1000
 
+#################################################################################
 # 缓存配置
 cache:
   # 是否启用缓存
@@ -122,6 +190,10 @@ cache:
   # 缓存目录
   cache_dir: "cache"
 
+  # 缓存过期时间（天）
+  ttl_days: 7
+
+#################################################################################
 # 演员刮削配置
 actor_scraper:
   # 是否启用演员刮削
@@ -151,15 +223,14 @@ actor_scraper:
       url: "https://raw.githubusercontent.com/gfriends/gfriends/master/"
       use_ai_fix: true
       timeout: 5
-  
+
+  #################################################################################
   # 批量处理配置
   batch_size: 50
   concurrent: 10
   retry: 3
 
-  # 缓存过期时间（天）
-  ttl_days: 7
-
+  #################################################################################
 # 翻译配置
 translator:
   # 是否启用翻译功能
@@ -190,7 +261,8 @@ translator:
   # 有道翻译器配置（可选，免费但不稳定）
   youdao:
     enabled: false  # 默认禁用，因为容易被限制
-
+    
+#################################################################################
 # 日志配置
 logging:
   # 日志级别（DEBUG/INFO/WARNING/ERROR）

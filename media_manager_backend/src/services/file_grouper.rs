@@ -367,6 +367,8 @@ mod tests {
                 parsed_code: None,
                 parsed_title: Some("Movie".to_string()),
                 parsed_year: None,
+                parsed_series: None,
+                parsed_date: None,
             },
             ScannedFile {
                 file_path: "/path/Movie-CD2.mp4".to_string(),
@@ -375,6 +377,8 @@ mod tests {
                 parsed_code: None,
                 parsed_title: Some("Movie".to_string()),
                 parsed_year: None,
+                parsed_series: None,
+                parsed_date: None,
             },
             ScannedFile {
                 file_path: "/path/Other.mp4".to_string(),
@@ -383,6 +387,8 @@ mod tests {
                 parsed_code: None,
                 parsed_title: Some("Other".to_string()),
                 parsed_year: None,
+                parsed_series: None,
+                parsed_date: None,
             },
         ];
 

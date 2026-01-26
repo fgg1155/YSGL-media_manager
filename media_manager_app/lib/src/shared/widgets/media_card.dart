@@ -739,6 +739,53 @@ void clearAspectRatioCache() {
   _aspectRatioCache.clear();
 }
 
+/// 预检测图片比例并缓存
+/// 在刮削完成后调用，避免列表页重新检测造成卡顿
+Future<void> precacheImageAspectRatio(String posterUrl) async {
+  // 如果已经缓存，直接返回
+  if (_aspectRatioCache.containsKey(posterUrl)) {
+    return;
+  }
+  
+  try {
+    final proxiedUrl = getProxiedImageUrl(posterUrl);
+    final imageProvider = CachedNetworkImageProvider(proxiedUrl);
+    final completer = Completer<ImageInfo>();
+    final stream = imageProvider.resolve(const ImageConfiguration());
+    
+    late ImageStreamListener listener;
+    listener = ImageStreamListener(
+      (info, _) {
+        if (!completer.isCompleted) {
+          completer.complete(info);
+        }
+        stream.removeListener(listener);
+      },
+      onError: (error, stackTrace) {
+        if (!completer.isCompleted) {
+          completer.completeError(error);
+        }
+        stream.removeListener(listener);
+      },
+    );
+    
+    stream.addListener(listener);
+    
+    final info = await completer.future;
+    final width = info.image.width.toDouble();
+    final height = info.image.height.toDouble();
+    final ratio = width / height;
+    
+    // 缓存比例
+    _aspectRatioCache[posterUrl] = ratio;
+    print('✅ 预缓存图片比例: $posterUrl -> $ratio');
+  } catch (e) {
+    print('⚠️ 预缓存图片比例失败: $posterUrl, 错误: $e');
+    // 失败时使用默认比例
+    _aspectRatioCache[posterUrl] = 2 / 3;
+  }
+}
+
 /// 瀑布流卡片 - 竖图版本（自适应高度）
 class _MasonryMediaCardPortrait extends StatefulWidget {
   final MediaItem media;

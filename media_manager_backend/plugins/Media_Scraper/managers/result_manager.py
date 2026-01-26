@@ -258,7 +258,8 @@ class ResultManager:
         self,
         results: List[ScrapeResult],
         search_title: str,
-        exclude_keywords: Optional[List[str]] = None
+        exclude_keywords: Optional[List[str]] = None,
+        target_date: Optional[str] = None  # 新增：目标日期（YYYY-MM-DD 格式）
     ) -> Optional[ScrapeResult]:
         """
         从多个结果中智能选择最佳匹配
@@ -267,6 +268,7 @@ class ResultManager:
             results: 结果列表
             search_title: 搜索的标题
             exclude_keywords: 排除关键词列表（如 BTS、花絮等）
+            target_date: 目标日期（YYYY-MM-DD 格式），用于日期查询
         
         Returns:
             最佳匹配的结果，如果没有合适的返回 None
@@ -283,8 +285,9 @@ class ResultManager:
             from pathlib import Path
             sys.path.insert(0, str(Path(__file__).parent.parent))
             from utils.query_parser import calculate_title_match_score
+            from utils.date_parser import is_date_query
         except ImportError:
-            self.logger.error("无法导入 query_parser 模块")
+            self.logger.error("无法导入 query_parser 或 date_parser 模块")
             # 回退：返回第一个结果
             return results[0]
         
@@ -292,28 +295,71 @@ class ResultManager:
         if exclude_keywords is None:
             exclude_keywords = ['bts', 'behind the scenes', 'behind-the-scenes', 'making of', 'bonus']
         
-        # 计算每个结果的匹配度分数
-        scored_results = []
-        for result in results:
-            result_title = result.title or ''
-            score = calculate_title_match_score(search_title, result_title, exclude_keywords)
-            scored_results.append((score, result))
-            self.logger.debug(f"匹配分数: {score:.2f} - {result_title}")
+        # 检测是否是日期查询
+        is_date_search = target_date is not None or is_date_query(search_title)
         
-        # 按分数降序排序
-        scored_results.sort(key=lambda x: x[0], reverse=True)
+        if is_date_search:
+            # 日期查询：使用日期匹配
+            self.logger.info(f"检测到日期查询，使用日期匹配逻辑")
+            
+            # 如果没有提供 target_date，尝试从 search_title 中解析
+            if not target_date:
+                from utils.date_parser import parse_date_query
+                _, parsed_date = parse_date_query(search_title)
+                if parsed_date:
+                    target_date = parsed_date.strftime('%Y-%m-%d')
+            
+            if target_date:
+                # 按日期精确匹配
+                matched_results = []
+                for result in results:
+                    result_date = result.release_date or ''
+                    # 提取日期部分（忽略时间）
+                    result_date_part = result_date.split('T')[0].split(' ')[0]
+                    
+                    if result_date_part == target_date:
+                        matched_results.append(result)
+                        self.logger.debug(f"日期匹配: {result.title} - {result_date_part}")
+                    else:
+                        self.logger.debug(f"日期不匹配: {result.title} - {result_date_part} != {target_date}")
+                
+                if matched_results:
+                    # 如果有多个匹配日期的结果，返回第一个（或者可以进一步用标题匹配）
+                    self.logger.info(f"找到 {len(matched_results)} 个匹配日期的结果，返回第一个")
+                    return matched_results[0]
+                else:
+                    self.logger.warning(f"没有结果匹配目标日期: {target_date}")
+                    # 回退：返回第一个结果
+                    return results[0]
+            else:
+                self.logger.warning(f"无法解析目标日期，回退到标题匹配")
+                # 回退到标题匹配
+                is_date_search = False
         
-        # 获取最高分
-        best_score, best_result = scored_results[0]
-        
-        # 如果最高分太低（< 50），返回 None
-        # 但如果只是因为包含排除关键词导致分数低，仍然返回（分数 >= 10）
-        if best_score < 10:
-            self.logger.warning(f"最佳匹配分数太低: {best_score:.2f}，返回 None")
-            return None
-        
-        self.logger.info(f"选择最佳匹配: {best_result.title} (分数: {best_score:.2f})")
-        return best_result
+        # 标题查询：使用标题匹配
+        if not is_date_search:
+            # 计算每个结果的匹配度分数
+            scored_results = []
+            for result in results:
+                result_title = result.title or ''
+                score = calculate_title_match_score(search_title, result_title, exclude_keywords)
+                scored_results.append((score, result))
+                self.logger.debug(f"匹配分数: {score:.2f} - {result_title}")
+            
+            # 按分数降序排序
+            scored_results.sort(key=lambda x: x[0], reverse=True)
+            
+            # 获取最高分
+            best_score, best_result = scored_results[0]
+            
+            # 如果最高分太低（< 10），返回 None
+            # 但如果只是因为包含排除关键词导致分数低，仍然返回（分数 >= 10）
+            if best_score < 10:
+                self.logger.warning(f"最佳匹配分数太低: {best_score:.2f}，返回 None")
+                return None
+            
+            self.logger.info(f"选择最佳匹配: {best_result.title} (分数: {best_score:.2f})")
+            return best_result
     
     def deduplicate_results(
         self,

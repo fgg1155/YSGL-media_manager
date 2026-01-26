@@ -6,7 +6,7 @@
 # from .iafd_scraper import IAFDScraper  # 暂时禁用
 from .theporndb_scraper import ThePornDBScraper
 from .MariskaX_Scraper import MariskaXScraper
-from .Straplez_Scraper import StraplezScraper
+# Straplez 已移至 MetArt Network 刮削器
 from .AdultPrime_Scraper import AdultPrimeScraper
 from .MindGeek_Network_Scraper import (
     MindGeekScraper, BrazzersScraper, RealityKingsScraper, BangBrosScraper,
@@ -16,7 +16,7 @@ from .MindGeek_Network_Scraper import (
 
 __all__ = [
     # 'AdultEmpireScraper', 'IAFDScraper',  # 暂时禁用
-    'ThePornDBScraper', 'MariskaXScraper', 'StraplezScraper', 'AdultPrimeScraper',
+    'ThePornDBScraper', 'MariskaXScraper', 'AdultPrimeScraper',
     'MindGeekScraper', 'BrazzersScraper', 'RealityKingsScraper', 'BangBrosScraper',
     'DigitalPlaygroundScraper', 'MofosScraper', 'TwistysScraper', 'SexyHubScraper',
     'FakeHubScraper', 'MileHighScraper', 'BabesScraper', 'TransAngelsScraper', 'LetsDoeItScraper'

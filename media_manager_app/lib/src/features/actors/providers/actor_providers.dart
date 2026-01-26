@@ -81,9 +81,8 @@ class ActorList extends _$ActorList {
       final repository = ref.read(actorRepositoryProvider);
       await repository.deleteActor(id);
 
-      final currentItems = state.value ?? [];
-      final filteredItems = currentItems.where((item) => item.id != id).toList();
-      state = AsyncValue.data(filteredItems);
+      // 刷新列表以加载新数据（填补删除后的空缺）
+      await refresh();
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
     }

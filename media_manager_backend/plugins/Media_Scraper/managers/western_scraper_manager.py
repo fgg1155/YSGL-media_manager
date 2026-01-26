@@ -42,10 +42,22 @@ class WesternScraperManager:
         capabilities = scraper_config.get('capabilities', {})
         self.movie_search_scrapers = set(capabilities.get('movie_search', ['theporndb']))
         self.scene_search_scrapers = set(capabilities.get('scene_search', [
-            'theporndb', 'mindgeek', 'gamma', 'hustler', 'mariskax', 'straplez', 'adultprime'
+            'theporndb', 'mindgeek', 'gamma', 'hustler', 'mariskax', 'straplez', 'adultprime', 'metart_network'
+        ]))
+        self.title_search_scrapers = set(capabilities.get('title_search', [
+            'theporndb', 'adultprime'
+        ]))
+        self.series_title_search_scrapers = set(capabilities.get('series_title_search', [
+            'theporndb', 'mindgeek', 'gamma', 'hustler', 'mariskax', 'adultprime', 'metart_network'
+        ]))
+        self.series_date_search_scrapers = set(capabilities.get('series_date_search', [
+            'theporndb', 'gamma', 'hustler', 'adultprime'
         ]))
         self.logger.info(f"支持电影搜索的刮削器: {self.movie_search_scrapers}")
         self.logger.info(f"支持场景搜索的刮削器: {self.scene_search_scrapers}")
+        self.logger.info(f"支持纯标题搜索的刮削器: {self.title_search_scrapers}")
+        self.logger.info(f"支持系列+标题搜索的刮削器: {self.series_title_search_scrapers}")
+        self.logger.info(f"支持系列+日期搜索的刮削器: {self.series_date_search_scrapers}")
         
         # 初始化结果管理器（统一处理刮削结果）
         from .result_manager import ResultManager
@@ -86,8 +98,8 @@ class WesternScraperManager:
             from scrapers.western.Gamma_Entertainment_Scraper import AbstractGammaEntertainmentScraper
             from scrapers.western.Hustler_Network_Scraper import AbstractHustlerScraper
             from scrapers.western.MariskaX_Scraper import MariskaXScraper
-            from scrapers.western.Straplez_Scraper import StraplezScraper
             from scrapers.western.AdultPrime_Scraper import AdultPrimeScraper
+            from scrapers.western.MetArt_Network_Scraper import MetArtNetworkScraper
             # from scrapers.western.adultempire_scraper import AdultEmpireScraper
             # from scrapers.western.iafd_scraper import IAFDScraper
             
@@ -97,8 +109,8 @@ class WesternScraperManager:
             self.gamma = AbstractGammaEntertainmentScraper(config=config)  # 添加 Gamma 刮削器
             self.hustler = AbstractHustlerScraper(site_config=None, config=config)  # 添加 Hustler 刮削器
             self.mariskax = MariskaXScraper(config, use_scraper=True)  # 添加 MariskaX 刮削器
-            self.straplez = StraplezScraper(config, use_scraper=False)  # 添加 Straplez 刮削器
             self.adultprime = AdultPrimeScraper(config, use_scraper=True)  # 添加 AdultPrime 刮削器
+            self.metart = MetArtNetworkScraper(config, use_scraper=False)  # 添加 MetArt Network 刮削器
             # self.adultempire = AdultEmpireScraper(config)
             # self.iafd = IAFDScraper(config)
             
@@ -106,7 +118,7 @@ class WesternScraperManager:
             self.adultempire = None
             self.iafd = None
             
-            self.logger.info("WesternScraperManager initialized with ThePornDB, MindGeek, Gamma, Hustler, MariskaX, Straplez and AdultPrime scrapers")
+            self.logger.info("WesternScraperManager initialized with ThePornDB, MindGeek, Gamma, Hustler, MariskaX, AdultPrime and MetArt Network scrapers")
         except ImportError as e:
             self.logger.warning(f"Failed to import Western scrapers: {e}")
             self.theporndb = None
@@ -114,8 +126,11 @@ class WesternScraperManager:
             self.gamma = None
             self.hustler = None
             self.mariskax = None
-            self.straplez = None
             self.adultprime = None
+            self.metart = None
+            self.adultempire = None
+            self.iafd = None
+            self.metart = None
             self.adultempire = None
             self.iafd = None
     
@@ -140,7 +155,7 @@ class WesternScraperManager:
         self.logger.info(f"=" * 80)
         
         # 1. 检查刮削器是否可用
-        if not self.theporndb and not self.mindgeek and not self.gamma and not self.mariskax and not self.straplez and not self.adultprime:
+        if not self.theporndb and not self.mindgeek and not self.gamma and not self.mariskax and not self.adultprime and not self.metart:
             self.logger.error("No scrapers available")
             return []
         
@@ -156,7 +171,10 @@ class WesternScraperManager:
         
         # 3. 如果有系列名，查找对应的刮削器
         if series:
-            target_scraper = self._find_scraper_for_series(series, content_type_hint)
+            # 检测是否是日期查询
+            is_date_query_flag = is_date_query(title)
+            
+            target_scraper = self._find_scraper_for_series(series, content_type_hint, is_date_query=is_date_query_flag)
             
             if not target_scraper:
                 # 未找到对应的刮削器，说明 series 不是真正的系列名
@@ -198,7 +216,7 @@ class WesternScraperManager:
                     # 继续尝试 ThePornDB 作为保底
         
         # 4. 无系列名或未找到对应刮削器：按标题直接搜索
-        # 优先级：AdultPrime -> ThePornDB
+        # 使用 title_search 配置的刮削器
         if not series:
             self.logger.info(f"按标题直接搜索（无系列名模式）")
             
@@ -210,45 +228,29 @@ class WesternScraperManager:
                 available_scrapers = self.scene_search_scrapers
                 self.logger.info(f"内容类型: {content_type_hint or 'Scene'}，使用所有刮削器")
             
-            # 1. 优先尝试 AdultPrime
-            if self.adultprime and 'adultprime' in available_scrapers:
-                self.logger.info(f"尝试使用 AdultPrime 刮削器")
-                try:
-                    results = self.adultprime.scrape_multiple(title, content_type_hint, None)
-                    if results:
-                        # 统一限制结果数量（由管理器控制）
-                        if len(results) > self.max_results:
-                            self.logger.info(f"结果数量限制: {len(results)} -> {self.max_results}")
-                            results = results[:self.max_results]
-                        
-                        self.logger.info(f"✓ AdultPrime 返回 {len(results)} 个结果")
-                        
-                        # 使用 ResultManager 统一处理匹配逻辑
-                        results = self.result_manager.process_results_with_matching(
-                            results, 
-                            title, 
-                            is_date_query=is_date_query(title)
-                        )
-                        return results
-                    else:
-                        self.logger.info(f"✗ AdultPrime 未找到结果")
-                except Exception as e:
-                    self.logger.error(f"✗ AdultPrime 刮削失败: {e}")
-                    import traceback
-                    self.logger.error(traceback.format_exc())
+            # 进一步过滤：只使用支持纯标题搜索的刮削器
+            title_scrapers = available_scrapers & self.title_search_scrapers
+            self.logger.info(f"支持纯标题搜索的刮削器: {title_scrapers}")
             
-            # 2. 回退到 ThePornDB
-            if self.theporndb and 'theporndb' in available_scrapers:
-                self.logger.info(f"回退到 ThePornDB 刮削器（保底模式）")
+            # 按配置顺序尝试刮削器
+            scrapers_to_try = []
+            if self.adultprime and 'adultprime' in title_scrapers:
+                scrapers_to_try.append(('adultprime', self.adultprime))
+            if self.theporndb and 'theporndb' in title_scrapers:
+                scrapers_to_try.append(('theporndb', self.theporndb))
+            
+            # 依次尝试刮削器
+            for scraper_name, scraper in scrapers_to_try:
+                self.logger.info(f"尝试使用 {scraper_name} 刮削器")
                 try:
-                    results = self.theporndb.scrape_multiple(title, content_type_hint, None)
+                    results = scraper.scrape_multiple(title, content_type_hint, None)
                     if results:
                         # 统一限制结果数量（由管理器控制）
                         if len(results) > self.max_results:
                             self.logger.info(f"结果数量限制: {len(results)} -> {self.max_results}")
                             results = results[:self.max_results]
                         
-                        self.logger.info(f"✓ ThePornDB 返回 {len(results)} 个结果")
+                        self.logger.info(f"✓ {scraper_name} 返回 {len(results)} 个结果")
                         
                         # 使用 ResultManager 统一处理匹配逻辑
                         results = self.result_manager.process_results_with_matching(
@@ -258,9 +260,9 @@ class WesternScraperManager:
                         )
                         return results
                     else:
-                        self.logger.info(f"✗ ThePornDB 未找到结果")
+                        self.logger.info(f"✗ {scraper_name} 未找到结果")
                 except Exception as e:
-                    self.logger.error(f"✗ ThePornDB 刮削失败: {e}")
+                    self.logger.error(f"✗ {scraper_name} 刮削失败: {e}")
                     import traceback
                     self.logger.error(traceback.format_exc())
             
@@ -399,11 +401,24 @@ class WesternScraperManager:
             # 如果有系列名，尝试从 title 中移除系列名前缀
             _, search_title = extract_series_and_title(title)
         
+        # 检测是否是日期查询，提取目标日期
+        target_date = None
+        try:
+            from utils.date_parser import is_date_query, parse_date_query
+            if is_date_query(title):
+                _, parsed_date = parse_date_query(title)
+                if parsed_date:
+                    target_date = parsed_date.strftime('%Y-%m-%d')
+                    self.logger.info(f"检测到日期查询，目标日期: {target_date}")
+        except Exception as e:
+            self.logger.warning(f"日期检测失败: {e}")
+        
         # 使用 result_manager 选择最佳匹配
         best_result = self.result_manager.select_best_match(
             results,
             search_title,
-            exclude_keywords=['bts', 'behind the scenes', 'behind-the-scenes', 'making of', 'bonus']
+            exclude_keywords=['bts', 'behind the scenes', 'behind-the-scenes', 'making of', 'bonus'],
+            target_date=target_date  # 传递目标日期
         )
         
         if not best_result:
@@ -464,13 +479,14 @@ class WesternScraperManager:
         # 这样可以支持新的系列名
         return len(potential_series) >= 4  # 至少4个字符，避免误判
     
-    def _find_scraper_for_series(self, series_name: str, content_type_hint: Optional[str] = None) -> Optional[tuple[str, Any]]:
+    def _find_scraper_for_series(self, series_name: str, content_type_hint: Optional[str] = None, is_date_query: bool = False) -> Optional[tuple[str, Any]]:
         """
         根据系列名查找对应的刮削器
         
         Args:
             series_name: 系列名（如 Girlsway, Brazzers, Evil Angel, Hustler, MariskaX）
             content_type_hint: 内容类型提示（Scene/Movie/Compilation），用于过滤刮削器
+            is_date_query: 是否是日期查询（如果是，只返回支持日期搜索的刮削器）
         
         Returns:
             (刮削器名称, 刮削器对象) 或 None
@@ -490,14 +506,23 @@ class WesternScraperManager:
             available_scrapers = self.scene_search_scrapers
             self.logger.info(f"[查找刮削器] 内容类型: {content_type_hint or 'Scene'}，使用所有刮削器")
         
-        # 0. 检查独立刮削器（MariskaX, Straplez）
+        # 如果是日期查询，进一步过滤只支持日期搜索的刮削器
+        if is_date_query:
+            available_scrapers = available_scrapers & self.series_date_search_scrapers
+            self.logger.info(f"[查找刮削器] 日期查询模式，只使用支持系列+日期搜索的刮削器: {available_scrapers}")
+        
+        # 0. 检查独立刮削器（MariskaX, MetArt Network）
         if normalized_series == 'mariskax' and self.mariskax and 'mariskax' in available_scrapers:
             self.logger.info(f"[查找刮削器] ✓ 系列 {series_name} 匹配 MariskaX 刮削器")
             return ('mariskax', self.mariskax)
         
-        if normalized_series == 'straplez' and self.straplez and 'straplez' in available_scrapers:
-            self.logger.info(f"[查找刮削器] ✓ 系列 {series_name} 匹配 Straplez 刮削器")
-            return ('straplez', self.straplez)
+        # MetArt Network 站点（Straplez, X-Art, MetArt, SexArt, TheLifeErotic 等）
+        metart_sites = ['straplez', 'xart', 'metart', 'sexart', 'thelifeerotic', 'metartnetwork', 
+                        'vivthomas', 'erroticaarchives', 'domai', 'goddessnudes', 'eroticbeauty', 
+                        'lovehairy', 'alsscan', 'rylskyart', 'eternaldesire', 'stunning18']
+        if normalized_series in metart_sites and self.metart and 'metart_network' in available_scrapers:
+            self.logger.info(f"[查找刮削器] ✓ 系列 {series_name} 匹配 MetArt Network 刮削器")
+            return ('metart_network', self.metart)
         
         # 1. 检查 AdultPrime 刮削器（匹配任何 AdultPrime 相关的系列名）
         # AdultPrime 包含 104 个子站点，这里简单匹配常见的站点名

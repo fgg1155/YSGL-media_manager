@@ -531,7 +531,7 @@ impl PluginManager {
     }
     
     /// 批量刮削媒体（串行）
-    pub async fn batch_scrape_media(&self, media_list: &[serde_json::Value]) -> Result<Vec<BatchScrapeMediaResult>> {
+    pub async fn batch_scrape_media(&self, media_list: &[serde_json::Value], content_type: &str) -> Result<Vec<BatchScrapeMediaResult>> {
         // 使用 media_scraper 插件
         let plugin = self.plugins.get("media_scraper")
             .ok_or_else(|| anyhow!("media_scraper plugin not found"))?;
@@ -539,14 +539,16 @@ impl PluginManager {
         let request_json = serde_json::json!({
             "action": "batch_scrape_media",
             "media_list": media_list,
-            "concurrent": false
+            "concurrent": false,
+            "scrape_mode": "auto",  // 使用 auto 模式，让插件根据字段自动判断
+            "content_type": content_type  // 使用用户选择的内容类型
         });
         
         self.call_batch_scrape_plugin(plugin, &request_json).await
     }
     
     /// 批量刮削媒体（并发）
-    pub async fn batch_scrape_media_concurrent(&self, media_list: &[serde_json::Value]) -> Result<Vec<BatchScrapeMediaResult>> {
+    pub async fn batch_scrape_media_concurrent(&self, media_list: &[serde_json::Value], content_type: &str) -> Result<Vec<BatchScrapeMediaResult>> {
         // 使用 media_scraper 插件
         let plugin = self.plugins.get("media_scraper")
             .ok_or_else(|| anyhow!("media_scraper plugin not found"))?;
@@ -554,7 +556,9 @@ impl PluginManager {
         let request_json = serde_json::json!({
             "action": "batch_scrape_media",
             "media_list": media_list,
-            "concurrent": true
+            "concurrent": true,
+            "scrape_mode": "auto",  // 使用 auto 模式，让插件根据字段自动判断
+            "content_type": content_type  // 使用用户选择的内容类型
         });
         
         self.call_batch_scrape_plugin(plugin, &request_json).await

@@ -12,9 +12,11 @@ class LocalScannedFile {
   final String filePath;
   final String fileName;
   final int fileSize;
-  final String? parsedCode;
-  final String? parsedTitle;
-  final int? parsedYear;
+  final String? parsedCode;      // JAV 番号（如 IPX-177）
+  final String? parsedTitle;     // 标题
+  final int? parsedYear;         // 年份
+  final String? parsedSeries;    // 系列名（欧美，如 Straplez）
+  final String? parsedDate;      // 发布日期（欧美，如 2026-01-23）
 
   LocalScannedFile({
     required this.filePath,
@@ -23,6 +25,8 @@ class LocalScannedFile {
     this.parsedCode,
     this.parsedTitle,
     this.parsedYear,
+    this.parsedSeries,
+    this.parsedDate,
   });
 
   Map<String, dynamic> toJson() => {
@@ -32,6 +36,8 @@ class LocalScannedFile {
     if (parsedCode != null) 'parsed_code': parsedCode,
     if (parsedTitle != null) 'parsed_title': parsedTitle,
     if (parsedYear != null) 'parsed_year': parsedYear,
+    if (parsedSeries != null) 'parsed_series': parsedSeries,
+    if (parsedDate != null) 'parsed_date': parsedDate,
   };
 }
 
@@ -48,8 +54,20 @@ class LocalScanResult {
 
 /// 本地文件扫描器（独立模式）
 class LocalFileScanner {
-  // 识别号正则表达式：ABC-123, ABCD-1234, ABC123 等
-  static final RegExp _codeRegex = RegExp(r'([A-Z]{2,6})-?(\d{3,5})');
+  // JAV 番号正则表达式：ABC-123, ABCD-1234, ABC123 等
+  static final RegExp _javCodeRegex = RegExp(r'([A-Z]{2,6})-?(\d{3,5})');
+  
+  // 欧美系列+日期格式：Series.YY.MM.DD 或 Series.YYYY.MM.DD
+  static final RegExp _westernSeriesDateRegex = RegExp(
+    r'^([A-Z][a-zA-Z0-9]*(?:[A-Z][a-zA-Z0-9]*)*)\.(\d{2})\.(\d{2})\.(\d{2})',
+    caseSensitive: false,
+  );
+  
+  // 欧美系列+标题格式：Series-Title 或 Series.Title
+  static final RegExp _westernSeriesTitleRegex = RegExp(
+    r'^([A-Z][a-zA-Z0-9]*(?:[A-Z][a-zA-Z0-9]*)*)[-\.](.+)',
+    caseSensitive: false,
+  );
   
   // 年份正则表达式：2020, 2021 等
   static final RegExp _yearRegex = RegExp(r'\b(19\d{2}|20\d{2})\b');
@@ -123,6 +141,8 @@ class LocalFileScanner {
         parsedCode: parsed['code'],
         parsedTitle: parsed['title'],
         parsedYear: parsed['year'],
+        parsedSeries: parsed['series'],
+        parsedDate: parsed['date'],
       );
     } catch (e) {
       print('解析文件失败: $e');
@@ -130,26 +150,82 @@ class LocalFileScanner {
     }
   }
 
-  /// 解析文件名，提取识别号、标题、年份
+  /// 解析文件名，提取识别号、标题、年份、系列、日期
   Map<String, dynamic> _parseFilename(String filename) {
     // 移除文件扩展名
     final nameWithoutExt = path.basenameWithoutExtension(filename);
 
-    // 提取识别号
-    String? parsedCode;
-    final codeMatch = _codeRegex.firstMatch(nameWithoutExt);
-    if (codeMatch != null) {
-      parsedCode = '${codeMatch.group(1)}-${codeMatch.group(2)}';
+    // 1. 尝试识别欧美格式：系列.YY.MM.DD
+    final westernDateMatch = _westernSeriesDateRegex.firstMatch(nameWithoutExt);
+    if (westernDateMatch != null) {
+      final series = westernDateMatch.group(1)!;
+      final year = westernDateMatch.group(2)!;
+      final month = westernDateMatch.group(3)!;
+      final day = westernDateMatch.group(4)!;
+      
+      // 构建完整日期：YYYY-MM-DD
+      final fullYear = int.parse('20$year');
+      final releaseDate = '20$year-$month-$day';
+      
+      return {
+        'code': null,           // 欧美不使用 code
+        'title': null,          // 不提取标题（不准确）
+        'year': fullYear,
+        'series': series,       // 系列名
+        'date': releaseDate,    // 发布日期
+      };
     }
 
-    // 提取年份
+    // 2. 尝试识别欧美格式：系列-标题 或 系列.标题
+    final westernTitleMatch = _westernSeriesTitleRegex.firstMatch(nameWithoutExt);
+    if (westernTitleMatch != null) {
+      final series = westernTitleMatch.group(1)!;
+      String title = westernTitleMatch.group(2)!;
+      
+      // 检查标题是否以大写字母开头（排除 JAV 番号误匹配）
+      if (title.isNotEmpty && title[0].toUpperCase() == title[0]) {
+        // 清理标题
+        title = title
+            .replaceAll('_', ' ')
+            .replaceAll('.', ' ')
+            .trim();
+        
+        // 移除常见标记
+        title = _removeCommonMarkers(title);
+        
+        // 提取年份（如果有）
+        int? parsedYear;
+        final yearMatch = _yearRegex.firstMatch(title);
+        if (yearMatch != null) {
+          parsedYear = int.tryParse(yearMatch.group(1)!);
+          title = title.replaceAll(yearMatch.group(0)!, '').trim();
+        }
+        
+        return {
+          'code': null,           // 欧美不使用 code
+          'title': title.isEmpty ? null : title,
+          'year': parsedYear,
+          'series': series,       // 系列名
+          'date': null,
+        };
+      }
+    }
+
+    // 3. 尝试识别 JAV 番号：ABC-123
+    String? parsedCode;
+    final javCodeMatch = _javCodeRegex.firstMatch(nameWithoutExt);
+    if (javCodeMatch != null) {
+      parsedCode = '${javCodeMatch.group(1)}-${javCodeMatch.group(2)}';
+    }
+
+    // 4. 提取年份
     int? parsedYear;
     final yearMatch = _yearRegex.firstMatch(nameWithoutExt);
     if (yearMatch != null) {
       parsedYear = int.tryParse(yearMatch.group(1)!);
     }
 
-    // 提取标题（移除识别号、年份、特殊标记后的内容）
+    // 5. 提取标题（移除识别号、年份、特殊标记后的内容）
     String title = nameWithoutExt;
 
     // 移除识别号
@@ -164,6 +240,28 @@ class LocalFileScanner {
     }
 
     // 移除常见标记
+    title = _removeCommonMarkers(title);
+
+    // 清理标题
+    title = title
+        .replaceAll('_', ' ')
+        .replaceAll('.', ' ')
+        .replaceAll('-', ' ')
+        .trim();
+
+    final parsedTitle = title.isEmpty ? null : title;
+
+    return {
+      'code': parsedCode,     // JAV 番号
+      'title': parsedTitle,
+      'year': parsedYear,
+      'series': null,         // JAV 不使用 series
+      'date': null,
+    };
+  }
+
+  /// 移除常见的视频质量标记
+  String _removeCommonMarkers(String text) {
     final markers = [
       RegExp(r'\[.*?\]'),  // [1080p], [中文字幕] 等
       RegExp(r'\(.*?\)'),  // (2023) 等
@@ -186,23 +284,11 @@ class LocalFileScanner {
       RegExp(r'DTS', caseSensitive: false),
     ];
 
+    String result = text;
     for (final marker in markers) {
-      title = title.replaceAll(marker, '');
+      result = result.replaceAll(marker, '');
     }
-
-    // 清理标题
-    title = title
-        .replaceAll('_', ' ')
-        .replaceAll('.', ' ')
-        .replaceAll('-', ' ')
-        .trim();
-
-    final parsedTitle = title.isEmpty ? null : title;
-
-    return {
-      'code': parsedCode,
-      'title': parsedTitle,
-      'year': parsedYear,
-    };
+    
+    return result.trim();
   }
 }

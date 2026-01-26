@@ -121,11 +121,8 @@ class MediaList extends _$MediaList {
     final repository = ref.read(mediaRepositoryProvider);
     await repository.batchDeleteMedia(ids);
     
-    // 从列表中移除已删除的项
-    final currentItems = state.value ?? [];
-    final deletedIds = ids.toSet();
-    final filteredItems = currentItems.where((item) => !deletedIds.contains(item.id)).toList();
-    state = AsyncValue.data(filteredItems);
+    // 刷新列表以加载新数据（填补删除后的空缺）
+    await refresh();
   }
 
   /// 批量编辑媒体 - 暂不支持，需要刷新列表

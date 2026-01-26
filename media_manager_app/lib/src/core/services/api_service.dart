@@ -2027,9 +2027,11 @@ class ScannedFile {
   final String filePath;
   final String fileName;
   final int fileSize;
-  final String? parsedCode;
-  final String? parsedTitle;
-  final int? parsedYear;
+  final String? parsedCode;      // JAV 番号（如 IPX-177）
+  final String? parsedTitle;     // 标题
+  final int? parsedYear;         // 年份
+  final String? parsedSeries;    // 系列名（欧美，如 Straplez）
+  final String? parsedDate;      // 发布日期（欧美，如 2026-01-23）
 
   const ScannedFile({
     required this.filePath,
@@ -2038,6 +2040,8 @@ class ScannedFile {
     this.parsedCode,
     this.parsedTitle,
     this.parsedYear,
+    this.parsedSeries,
+    this.parsedDate,
   });
 
   Map<String, dynamic> toJson() => {
@@ -2047,6 +2051,8 @@ class ScannedFile {
     if (parsedCode != null) 'parsed_code': parsedCode,
     if (parsedTitle != null) 'parsed_title': parsedTitle,
     if (parsedYear != null) 'parsed_year': parsedYear,
+    if (parsedSeries != null) 'parsed_series': parsedSeries,
+    if (parsedDate != null) 'parsed_date': parsedDate,
   };
 
   factory ScannedFile.fromJson(Map<String, dynamic> json) {
@@ -2058,6 +2064,8 @@ class ScannedFile {
         parsedCode: json['parsed_code']?.toString(),
         parsedTitle: json['parsed_title']?.toString(),
         parsedYear: (json['parsed_year'] as num?)?.toInt(),
+        parsedSeries: json['parsed_series']?.toString(),
+        parsedDate: json['parsed_date']?.toString(),
       );
     } catch (e) {
       throw Exception('Failed to parse ScannedFile from JSON: $json. Error: $e');

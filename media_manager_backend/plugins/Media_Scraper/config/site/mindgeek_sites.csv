@@ -1,11 +1,12 @@
 # MindGeek Network Sites Configuration 共计227个站点（214个系列站点 + 13个网络主站）
-# Format: site_name,domain,code,network,enabled,priority
+# Format: site_name,domain,code,network,enabled,priority,main_api
 # Networks: Brazzers(31+1), RealityKings(44+1), BangBros(53+1), DigitalPlayground(3+1), Mofos(13+1), Twistys(10+1), SexyHub(6+1), FakeHub(11+1), MileHigh(5+1), Babes(5+1), TransAngels(1+1), LetsDoeIt(18+1), Independent(15+1)
+# Main API: https://site-api.project1service.com
 
-site_name,domain,code,network,enabled,priority
+site_name,domain,code,network,enabled,priority,main_api
 
 # Brazzers Network (31 sites + 1 main site)
-Brazzers,www.brazzers.com,,Brazzers,true,100
+Brazzers,www.brazzers.com,,Brazzers,true,100,https://site-api.project1service.com
 Moms in Control,MomsInControl.com,mic,Brazzers,true,90
 Pornstars Like It Big,PornstarsLikeItBig.com,plib,Brazzers,true,90
 Big Tits at Work,BigTitsAtWork.com,btaw,Brazzers,true,85

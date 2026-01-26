@@ -348,7 +348,35 @@ class PluginUIRenderer {
                   // 刷新页面
                   final container = ProviderScope.containerOf(context, listen: false);
                   if (contextData.containsKey('media_id')) {
+                    // 清除旧的图片缓存
+                    clearAspectRatioCache();
+                    
+                    // 清除网络图片缓存（强制重新下载）
+                    if (context.mounted) {
+                      // 清除 Flutter 的图片缓存
+                      PaintingBinding.instance.imageCache.clear();
+                      PaintingBinding.instance.imageCache.clearLiveImages();
+                    }
+                    
+                    // 预检测新图片的尺寸并缓存（避免列表页卡顿）
+                    try {
+                      // 获取刮削后的媒体详情
+                      final apiService = container.read(apiServiceProvider);
+                      final mediaDetail = await apiService.getMediaDetail(mediaId);
+                      
+                      // 预检测封面图片尺寸
+                      if (mediaDetail.posterUrl != null && mediaDetail.posterUrl!.isNotEmpty) {
+                        await precacheImageAspectRatio(mediaDetail.posterUrl!);
+                      }
+                      
+                      print('✅ 图片尺寸预检测完成');
+                    } catch (e) {
+                      print('⚠️ 图片尺寸预检测失败: $e');
+                    }
+                    
+                    // 刷新详情页和列表页
                     container.invalidate(mediaDetailProvider(mediaId));
+                    container.invalidate(mediaListProvider);
                   }
                 }
               } else if (response.isMultiple) {
@@ -366,11 +394,37 @@ class PluginUIRenderer {
                       results: response.multipleResults!.results,
                       mediaId: mediaId,
                       mode: mode,  // 传递 mode 参数
-                      onSuccess: () {
+                      onSuccess: () async {
                         // 刷新页面
                         if (context.mounted) {
                           final container = ProviderScope.containerOf(context, listen: false);
+                          // 清除旧的图片缓存
+                          clearAspectRatioCache();
+                          
+                          // 清除网络图片缓存（强制重新下载）
+                          // 清除 Flutter 的图片缓存
+                          PaintingBinding.instance.imageCache.clear();
+                          PaintingBinding.instance.imageCache.clearLiveImages();
+                          
+                          // 预检测新图片的尺寸并缓存（避免列表页卡顿）
+                          try {
+                            // 获取刮削后的媒体详情
+                            final apiService = container.read(apiServiceProvider);
+                            final mediaDetail = await apiService.getMediaDetail(mediaId);
+                            
+                            // 预检测封面图片尺寸
+                            if (mediaDetail.posterUrl != null && mediaDetail.posterUrl!.isNotEmpty) {
+                              await precacheImageAspectRatio(mediaDetail.posterUrl!);
+                            }
+                            
+                            print('✅ 图片尺寸预检测完成');
+                          } catch (e) {
+                            print('⚠️ 图片尺寸预检测失败: $e');
+                          }
+                          
+                          // 刷新详情页和列表页
                           container.invalidate(mediaDetailProvider(mediaId));
+                          container.invalidate(mediaListProvider);
                         }
                       },
                     ),
@@ -436,11 +490,15 @@ class PluginUIRenderer {
         }
         
         if (itemCount > 0) {
+          // 判断是否是未匹配文件刮削
+          final isUnmatchedFileScrape = contextData.containsKey('unmatched_files');
+          
           return EnhancedDialogRenderer.renderBatchScrapeDialog(
             context: context,
             title: title,
             itemCount: itemCount,
             itemType: itemType,
+            showScrapeModeSelector: !isUnmatchedFileScrape,  // 未匹配文件刮削时隐藏刮削方式选择器
             onConfirm: (concurrent, scrapeMode, contentType) {
               final formData = <String, dynamic>{
                 'concurrent': concurrent,
@@ -899,6 +957,13 @@ class PluginUIRenderer {
               if (context.mounted) {
                 Navigator.pop(context);
                 print('✅ Batch dialog closed');
+                
+                // 立即刷新列表数据
+                print('🔄 刷新列表数据...');
+                final container = ProviderScope.containerOf(context, listen: false);
+                clearAspectRatioCache();
+                container.invalidate(actorListProvider);
+                print('✅ 列表数据已刷新');
               }
               // 显示结果（复用媒体刮削结果显示）
               _showBatchMediaScrapeResults(context, responseData, locale, contextData: contextData);
@@ -937,6 +1002,14 @@ class PluginUIRenderer {
               if (context.mounted) {
                 Navigator.pop(context);
                 print('✅ Batch dialog closed');
+                
+                // 立即刷新列表数据
+                print('🔄 刷新列表数据...');
+                final container = ProviderScope.containerOf(context, listen: false);
+                clearAspectRatioCache();
+                container.invalidate(mediaListProvider);
+                container.invalidate(actorListProvider);
+                print('✅ 列表数据已刷新');
               }
               // 显示结果
               _showBatchMediaScrapeResults(context, responseData, locale, contextData: contextData);
@@ -980,6 +1053,13 @@ class PluginUIRenderer {
                   if (context.mounted) {
                     Navigator.pop(context);
                     print('✅ Batch dialog closed');
+                    
+                    // 立即刷新列表数据
+                    print('🔄 刷新列表数据...');
+                    final container = ProviderScope.containerOf(context, listen: false);
+                    clearAspectRatioCache();
+                    container.invalidate(mediaListProvider);
+                    print('✅ 列表数据已刷新');
                   }
                   _showAutoScrapeResults(context, responseData, locale);
                 },

@@ -69,6 +69,7 @@ class EnhancedDialogRenderer {
     required String itemType, // 'media' 或 'actor'
     required Function(bool concurrent, String scrapeMode, String contentType) onConfirm,
     required VoidCallback onCancel,
+    bool showScrapeModeSelector = true,  // 新增：是否显示刮削方式选择器
   }) {
     return _EnhancedBatchScrapeDialog(
       title: title,
@@ -76,6 +77,7 @@ class EnhancedDialogRenderer {
       itemType: itemType,
       onConfirm: onConfirm,
       onCancel: onCancel,
+      showScrapeModeSelector: showScrapeModeSelector,
     );
   }
 
@@ -155,6 +157,7 @@ class _EnhancedBatchScrapeDialog extends StatefulWidget {
   final String itemType;
   final Function(bool concurrent, String scrapeMode, String contentType) onConfirm;
   final VoidCallback onCancel;
+  final bool showScrapeModeSelector;  // 新增：是否显示刮削方式选择器
 
   const _EnhancedBatchScrapeDialog({
     required this.title,
@@ -162,6 +165,7 @@ class _EnhancedBatchScrapeDialog extends StatefulWidget {
     required this.itemType,
     required this.onConfirm,
     required this.onCancel,
+    this.showScrapeModeSelector = true,  // 默认显示
   });
 
   @override
@@ -307,8 +311,8 @@ class _EnhancedBatchScrapeDialogState extends State<_EnhancedBatchScrapeDialog> 
             ),
             const SizedBox(height: 16),
 
-            // 刮削方式选择（仅媒体类型显示）
-            if (widget.itemType == 'media') ...[
+            // 刮削方式选择（仅媒体类型显示，且 showScrapeModeSelector 为 true）
+            if (widget.itemType == 'media' && widget.showScrapeModeSelector) ...[
               Text(
                 '刮削方式',
                 style: theme.textTheme.titleSmall?.copyWith(

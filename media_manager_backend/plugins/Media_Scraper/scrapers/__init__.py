@@ -16,7 +16,7 @@ from .western import (
     # IAFDScraper,  # 暂时禁用
     ThePornDBScraper,
     MariskaXScraper,
-    StraplezScraper,
+    # StraplezScraper,  # 已移至 MetArt Network
     AdultPrimeScraper,
     MindGeekScraper,
     BrazzersScraper,
@@ -45,7 +45,7 @@ __all__ = [
     # 'IAFDScraper',  # 暂时禁用
     'ThePornDBScraper',
     'MariskaXScraper',
-    'StraplezScraper',
+    # 'StraplezScraper',  # 已移至 MetArt Network
     'AdultPrimeScraper',
     'MindGeekScraper',
     'BrazzersScraper',

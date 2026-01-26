@@ -144,6 +144,8 @@ class _FileScanScreenState extends ConsumerState<FileScanScreen> {
       parsedCode: f.parsedCode,
       parsedTitle: f.parsedTitle,
       parsedYear: f.parsedYear,
+      parsedSeries: f.parsedSeries,
+      parsedDate: f.parsedDate,
     )).toList();
 
     final apiFileGroups = multiPartGroups.map((g) => FileGroup(
@@ -155,6 +157,8 @@ class _FileScanScreenState extends ConsumerState<FileScanScreen> {
         parsedCode: f.scannedFile.parsedCode,
         parsedTitle: f.scannedFile.parsedTitle,
         parsedYear: f.scannedFile.parsedYear,
+        parsedSeries: f.scannedFile.parsedSeries,
+        parsedDate: f.scannedFile.parsedDate,
       )).toList(),
       totalSize: g.totalSize,
     )).toList();

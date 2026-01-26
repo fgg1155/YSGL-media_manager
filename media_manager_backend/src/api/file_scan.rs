@@ -106,6 +106,8 @@ pub struct AutoScrapeRequest {
     pub unmatched_groups: Option<Vec<FileGroup>>,
     #[serde(default, deserialize_with = "deserialize_bool_from_anything")]
     pub concurrent: bool,
+    pub content_type: Option<String>,  // 内容类型：Scene 或 Movie
+    pub process_mode: Option<String>,  // 处理模式：create_new 或 update_existing
 }
 
 #[derive(Debug, Serialize)]
@@ -441,8 +443,10 @@ async fn process_auto_scrape(
     
     // 收集单文件信息
     for (index, file) in request.unmatched_files.iter().enumerate() {
+        let key = format!("file_{}", index);
+        
+        // 优先使用 JAV 番号
         if let Some(code) = &file.parsed_code {
-            let key = format!("file_{}", index);
             media_list.push(serde_json::json!({
                 "id": key.clone(),
                 "code": code,
@@ -455,8 +459,70 @@ async fn process_auto_scrape(
                 "file_size": file.file_size,
                 "code": code,
             }));
-        } else {
-            warn!("单文件 {} 没有识别到识别号", file.file_name);
+        }
+        // 其次使用欧美系列+日期
+        else if let (Some(series), Some(date)) = (&file.parsed_series, &file.parsed_date) {
+            // 只传递系列名和发布日期，让刮削管理器自动处理
+            media_list.push(serde_json::json!({
+                "id": key.clone(),
+                "series": series,  // 系列名用于选择刮削器
+                "release_date": date,  // 发布日期用于生成查询
+            }));
+            file_info_map.insert(key, serde_json::json!({
+                "is_group": false,
+                "file_path": file.file_path,
+                "file_name": file.file_name,
+                "file_size": file.file_size,
+                "series": series,
+                "date": date,
+            }));
+        }
+        // 再次使用欧美系列+标题
+        else if let Some(series) = &file.parsed_series {
+            if let Some(title) = &file.parsed_title {
+                // 只传递纯标题和系列名，让刮削管理器自动处理
+                media_list.push(serde_json::json!({
+                    "id": key.clone(),
+                    "title": title,  // 只传递纯标题（如 "Scene Title"）
+                    "series": series,  // 系列名用于选择刮削器
+                }));
+                file_info_map.insert(key, serde_json::json!({
+                    "is_group": false,
+                    "file_path": file.file_path,
+                    "file_name": file.file_name,
+                    "file_size": file.file_size,
+                    "series": series,
+                    "title": title,
+                }));
+            } else {
+                warn!("单文件 {} 只有系列名但没有标题或日期", file.file_name);
+                failed_count += 1;
+            }
+        }
+        // 最后使用纯标题（没有番号、系列名的文件）
+        else if let Some(title) = &file.parsed_title {
+            // 如果有年份，构建 "标题 (年份)" 格式
+            let query = if let Some(year) = file.parsed_year {
+                format!("{} ({})", title, year)
+            } else {
+                title.clone()
+            };
+            
+            media_list.push(serde_json::json!({
+                "id": key.clone(),
+                "title": query,  // 使用标题（可能包含年份）
+            }));
+            file_info_map.insert(key, serde_json::json!({
+                "is_group": false,
+                "file_path": file.file_path,
+                "file_name": file.file_name,
+                "file_size": file.file_size,
+                "title": title,
+                "year": file.parsed_year,
+            }));
+        }
+        else {
+            warn!("单文件 {} 无法识别任何有效信息", file.file_name);
             failed_count += 1;
         }
     }
@@ -521,12 +587,17 @@ async fn process_auto_scrape(
     // 调用插件批量刮削
     let manager = state.plugin_manager.read().await;
     info!("准备调用插件管理器，并发模式: {}", request.concurrent);
+    
+    // 使用用户选择的 content_type，默认为 "Scene"
+    let content_type = request.content_type.as_deref().unwrap_or("Scene");
+    info!("使用内容类型: {}", content_type);
+    
     let scrape_results = if request.concurrent {
         info!("使用并发模式批量刮削 {} 个项目", media_list.len());
-        manager.batch_scrape_media_concurrent(&media_list).await
+        manager.batch_scrape_media_concurrent(&media_list, content_type).await
     } else {
         info!("使用串行模式批量刮削 {} 个项目", media_list.len());
-        manager.batch_scrape_media(&media_list).await
+        manager.batch_scrape_media(&media_list, content_type).await
     };
     info!("插件管理器调用完成");
     

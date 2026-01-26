@@ -2,62 +2,62 @@
 # 用于绕过网络屏蔽，将域名映射到可访问的 IP 地址
 # 格式: 域名: IP地址
 
+######################################################################
 # MindGeek 网络站点 IP 映射
 # 注意: 这些 IP 地址可能会变化，需要定期更新
+
 # Brazzers 网络
-  www.brazzers.com: "66.254.114.234"  # 自动更新于 2026-01-20 00:11:14
+www.brazzers.com: "66.254.114.234"  # 自动更新于 2026-01-20 00:11:14
 
 # SexyHub 网络
-  www.sexyhub.com: "66.254.114.234"
+www.sexyhub.com: "66.254.114.234"
+www.fakehub.com: "66.254.114.234"
 
-# SexyHub 网络
-  www.fakehub.com: "66.254.114.234"
-  
 # BangBros 网络
-  bangbros.com: "66.254.114.234"       # BangBros 主站点
+bangbros.com: "66.254.114.234"  # BangBros 主站点
 # 注意: BangBros子站点(如BangBus)会重定向到主站点的特定页面，无需单独映射
 
-# LetsDoeIt网络
-  doegirls.com: "185.7.98.51"         # DoeGirls 网络真实IP (不带www)
-  www.letsdoeit.com: "66.254.114.234"  # LetsDoeIt 网络真实IP  
+# LetsDoeIt 网络
+doegirls.com: "185.7.98.51"  # DoeGirls 网络真实IP (不带www)
+www.letsdoeit.com: "66.254.114.234"  # LetsDoeIt 网络真实IP
 
 # Independent 网络
-  www.biempire.com: "66.254.114.234"   # BiEmpire 使用相同IP
-
-# Straplez 网站
-  www.straplez.com: "207.66.141.189"   # Straplez 真实IP
-  
-# Gamma Entertainment 网络
-  # www.evilangel.com 已启用 cloudscraper，直连可用，无需 IP 映射
-  
-  # Algolia API 服务器（需要 IP 映射）
-  tsmkfa364q-1.algolianet.com: "108.59.0.18"
-  tsmkfa364q-2.algolianet.com: "108.59.0.18"
-  tsmkfa364q-3.algolianet.com: "108.59.0.18"
-  tsmkfa364q-dsn.algolia.net: "108.59.0.18"
-
-# Hustler Network 站点 IP 映射
-  hustler.com: "216.198.79.1"
-  hustlerunlimited.com: "104.21.35.44"  # Hustler 实际使用的 WordPress 站点
-
-# Builder.io API 服务器 IP 映射 (用于 Hustler 网络)
-# 注意: CloudFront CDN 不需要 IP 映射，直接使用 DNS 解析
-# cdn.builder.io: "13.33.187.27"  # 已禁用，使用 DNS 解析
-
-
-# Gamma Entertainment 网络 (Algolia API)
-# Evilangel 使用 Algolia 搜索服务
-# 域名格式: {app_id}-1.algolianet.com (例如: tsmkfa364q-1.algolianet.com)
-  tsmkfa364q-1.algolianet.com: "108.59.0.18"  # Algolia API 服务器
-  tsmkfa364q-2.algolianet.com: "108.59.0.18"  # Algolia API 备用服务器
-  tsmkfa364q-dns.algolianet.com: "108.59.0.18"  # Algolia DNS 服务器
+www.biempire.com: "66.254.114.234"  # BiEmpire 使用相同IP
 
 # 其他 MindGeek 站点（如果需要）
 # www.realitykings.com: "104.18.33.75"
 # www.mofos.com: "104.18.34.75"
 # www.twistys.com: "104.18.35.75"
 
-# 使用说明:
+######################################################################
+# MetArt Network 网络站点 IP 映射
+
+# Straplez 网站
+www.straplez.com: "207.66.141.189"  # Straplez 真实IP
+
+######################################################################
+# Gamma Entertainment 网络站点 IP 映射
+# www.evilangel.com 已启用 cloudscraper，直连可用，无需 IP 映射
+
+# Algolia API 服务器（需要 IP 映射）
+tsmkfa364q-1.algolianet.com: "108.59.0.18"
+tsmkfa364q-2.algolianet.com: "108.59.0.18"
+tsmkfa364q-3.algolianet.com: "108.59.0.18"
+tsmkfa364q-dsn.algolia.net: "108.59.0.18"
+
+######################################################################
+# Hustler Network 网络站点 IP 映射
+
+hustler.com: "216.198.79.1"
+hustlerunlimited.com: "104.21.35.44"  # Hustler 实际使用的 WordPress 站点
+
+# Builder.io API 服务器 IP 映射 (用于 Hustler 网络)
+# 注意: CloudFront CDN 不需要 IP 映射，直接使用 DNS 解析
+# cdn.builder.io: "13.33.187.27"  # 已禁用，使用 DNS 解析
+
+######################################################################
+# 使用说明
+
 # 1. 使用 nslookup 或 dig 命令查询域名的真实 IP
 # 2. 如果域名被 DNS 污染，可以使用海外 DNS 查询
 # 3. 可以使用多个 IP 地址，系统会自动选择可用的

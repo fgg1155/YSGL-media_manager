@@ -331,45 +331,42 @@ def select_best_match(hits: list, search_title: str,
 
 def generate_series_date_query(series: str, release_date: str) -> Optional[str]:
     """
-    生成系列+日期格式的查询字符串
+    生成日期格式的查询字符串（纯日期，不包含系列名）
     
-    格式：系列.YY.MM.DD
-    例如：Evilangel.26.01.23
+    格式：YY.MM.DD
+    例如：26.01.23
+    
+    注意：系列名只用于选择刮削器，不包含在查询字符串中
     
     Args:
-        series: 系列名（如 "Evil Angel"）
+        series: 系列名（如 "Evil Angel"）- 仅用于日志记录
         release_date: 发布日期（ISO 格式，如 "2026-01-23"）
     
     Returns:
-        格式化的查询字符串，如果无法生成则返回 None
+        格式化的查询字符串（纯日期），如果无法生成则返回 None
     
     Examples:
         >>> generate_series_date_query("Evil Angel", "2026-01-23")
-        'Evilangel.26.01.23'
+        '26.01.23'
         
         >>> generate_series_date_query("Brazzers Exxtra", "2025-12-15")
-        'BrazzersExxtra.25.12.15'
+        '25.12.15'
     """
     from datetime import datetime
     
-    if not series or not release_date:
+    if not release_date:
         return None
     
     try:
         # 解析日期
         date = datetime.fromisoformat(release_date.replace('Z', '+00:00'))
         
-        # 格式化日期：YY.MM.DD
+        # 格式化日期：YY.MM.DD（纯日期，不包含系列名）
         year = str(date.year)[2:]  # 取后两位
         month = str(date.month).zfill(2)
         day = str(date.day).zfill(2)
         
-        # 处理系列名：去除空格，保持每个单词首字母大写
-        series_formatted = ''.join(
-            word.capitalize() for word in series.split() if word
-        )
-        
-        return f"{series_formatted}.{year}.{month}.{day}"
+        return f"{year}.{month}.{day}"
     
     except (ValueError, AttributeError) as e:
         return None
@@ -377,32 +374,29 @@ def generate_series_date_query(series: str, release_date: str) -> Optional[str]:
 
 def generate_series_title_query(series: str, title: str) -> Optional[str]:
     """
-    生成系列+标题格式的查询字符串
+    生成标题格式的查询字符串（纯标题，不包含系列名）
     
-    格式：系列-标题
-    例如：Brazzers-You Bet Your Ass! Vol. 2
+    格式：标题
+    例如：You Bet Your Ass! Vol. 2
+    
+    注意：系列名只用于选择刮削器，不包含在查询字符串中
     
     Args:
-        series: 系列名（如 "Brazzers Exxtra"）
+        series: 系列名（如 "Brazzers Exxtra"）- 仅用于日志记录
         title: 标题（如 "You Bet Your Ass! Vol. 2"）
     
     Returns:
-        格式化的查询字符串，如果无法生成则返回 None
+        格式化的查询字符串（纯标题），如果无法生成则返回 None
     
     Examples:
         >>> generate_series_title_query("Brazzers Exxtra", "You Bet Your Ass! Vol. 2")
-        'BrazzersExxtra-You Bet Your Ass! Vol. 2'
+        'You Bet Your Ass! Vol. 2'
         
         >>> generate_series_title_query("Evil Angel", "Nympho Wars")
-        'Evilangel-Nympho Wars'
+        'Nympho Wars'
     """
-    if not series or not title:
+    if not title:
         return None
     
-    # 处理系列名：去除空格，保持每个单词首字母大写
-    series_formatted = ''.join(
-        word.capitalize() for word in series.split() if word
-    )
-    
-    # 标题保持原样
-    return f"{series_formatted}-{title}"
+    # 标题保持原样（不包含系列名）
+    return title
