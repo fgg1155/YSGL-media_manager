@@ -1,0 +1,8 @@
+# MatureNL Sites Configuration
+# Format: site_name,domain,code,network,enabled,priority,main_api
+# MatureNL 是独立站点，不属于任何网络
+
+site_name,domain,code,network,enabled,priority,main_api
+
+# MatureNL (独立站点)
+MatureNL,mature.nl,,MatureNL,true,80,https://www.mature.nl

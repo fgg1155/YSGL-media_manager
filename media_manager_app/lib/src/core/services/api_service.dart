@@ -961,6 +961,7 @@ class ApiService {
     String? code,
     String? contentType,
     String? series,
+    String? studio,  // 新增：片商名（用于 JAV）
     String mode = 'replace',  // 'replace' 或 'supplement'
   }) async {
     try {
@@ -968,6 +969,7 @@ class ApiService {
         if (code != null) 'code': code,
         if (contentType != null) 'content_type': contentType,
         if (series != null) 'series': series,
+        if (studio != null) 'studio': studio,  // 新增：传递片商名
         'mode': mode,
       });
       

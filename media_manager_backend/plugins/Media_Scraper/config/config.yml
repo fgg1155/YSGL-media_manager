@@ -108,12 +108,15 @@ scraper:
       - adultprime
       - metart_network
       - scoregroup
+      - japanhdv_network
+      - maturenl
     
     # 支持纯标题搜索的刮削器列表（无系列名时使用）
     # 这些刮削器可以通过标题搜索内容（如 "Scene Title"）
     title_search:
       - theporndb
       - adultprime
+      - japanhdv_network
     
     # 支持系列+标题搜索的刮削器列表
     # 这些刮削器可以通过系列名+标题搜索内容（如 "Brazzers - Scene Title"）
@@ -126,6 +129,8 @@ scraper:
       - adultprime
       - metart_network
       - scoregroup
+      - japanhdv_network
+      - maturenl
     
     # 支持系列+日期搜索的刮削器列表
     # 这些刮削器可以通过日期精确搜索内容（如 "StrapLez.25.10.09"）

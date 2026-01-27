@@ -309,11 +309,23 @@ class PluginUIRenderer {
               final apiService = container.read(apiServiceProvider);
               final mediaId = contextData['media_id'] as String;
               
-              // 根据刮削模式决定是否传递 series 参数
-              // 只有 series_date 和 series_title 模式才传递 series
+              // 根据刮削模式决定是否传递 series/studio 参数
               String? seriesParam;
+              String? studioParam;
+              
+              print('🔍 刮削模式: $scrapeMode');
+              print('   searchQuery: $searchQuery');
+              
               if (scrapeMode == 'series_date' || scrapeMode == 'series_title') {
+                // series_date 和 series_title 模式：传递 series
                 seriesParam = contextData['series'] as String?;
+                print('   ✅ 传递 series: $seriesParam');
+              } else if (scrapeMode == 'studio_code') {
+                // studio_code 模式：传递 studio
+                studioParam = contextData['studio'] as String?;
+                print('   ✅ 传递 studio: $studioParam');
+              } else {
+                print('   ⚠️ 不传递 series/studio');
               }
               
               // 调用统一的刮削API
@@ -321,7 +333,8 @@ class PluginUIRenderer {
                 mediaId: mediaId,
                 code: searchQuery,
                 contentType: contentType,
-                series: seriesParam,  // 只在需要时传递 series
+                series: seriesParam,  // 只在 series_date/series_title 模式传递
+                studio: studioParam,  // 只在 studio_code 模式传递
                 mode: mode,  // 'replace' 或 'supplement'
               );
 

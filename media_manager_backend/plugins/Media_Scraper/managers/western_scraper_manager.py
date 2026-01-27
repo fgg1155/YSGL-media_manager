@@ -7,7 +7,9 @@ import logging
 import threading
 import re
 from typing import Dict, Any, Optional, List
-from .jav_scraper_manager import ScrapeResult
+
+# 从核心模块导入 ScrapeResult
+from core.models import ScrapeResult
 
 # 导入工具模块
 import sys
@@ -42,13 +44,13 @@ class WesternScraperManager:
         capabilities = scraper_config.get('capabilities', {})
         self.movie_search_scrapers = set(capabilities.get('movie_search', ['theporndb']))
         self.scene_search_scrapers = set(capabilities.get('scene_search', [
-            'theporndb', 'mindgeek', 'gamma', 'hustler', 'mariskax', 'straplez', 'adultprime', 'metart_network'
+            'theporndb', 'mindgeek', 'gamma', 'hustler', 'mariskax', 'adultprime', 'metart_network', 'scoregroup', 'japanhdv_network', 'maturenl'
         ]))
         self.title_search_scrapers = set(capabilities.get('title_search', [
             'theporndb', 'adultprime'
         ]))
         self.series_title_search_scrapers = set(capabilities.get('series_title_search', [
-            'theporndb', 'mindgeek', 'gamma', 'hustler', 'mariskax', 'adultprime', 'metart_network'
+            'theporndb', 'mindgeek', 'gamma', 'hustler', 'mariskax', 'adultprime', 'metart_network', 'scoregroup', 'japanhdv_network', 'maturenl'
         ]))
         self.series_date_search_scrapers = set(capabilities.get('series_date_search', [
             'theporndb', 'gamma', 'hustler', 'adultprime'
@@ -60,8 +62,43 @@ class WesternScraperManager:
         self.logger.info(f"支持系列+日期搜索的刮削器: {self.series_date_search_scrapers}")
         
         # 初始化结果管理器（统一处理刮削结果）
-        from .result_manager import ResultManager
+        from .result_manager import ResultManager, MatchStrategy
         self.result_manager = ResultManager()
+        self.MatchStrategy = MatchStrategy  # 保存为类属性，供其他方法使用
+        
+        # 配置每个刮削器的匹配策略
+        self.scraper_match_strategies = {
+            # ThePornDB: 智能匹配（默认）
+            'theporndb': self.MatchStrategy.SMART_MATCH,
+            
+            # MindGeek: 智能匹配（支持精准匹配）
+            'mindgeek': self.MatchStrategy.SMART_MATCH,
+            
+            # Gamma: 智能匹配（支持精准匹配）
+            'gamma': self.MatchStrategy.SMART_MATCH,
+            
+            # Hustler: 智能匹配
+            'hustler': self.MatchStrategy.SMART_MATCH,
+            
+            # MariskaX: 智能匹配
+            'mariskax': self.MatchStrategy.SMART_MATCH,
+            
+            # AdultPrime: 智能匹配
+            'adultprime': self.MatchStrategy.SMART_MATCH,
+            
+            # MetArt Network: 智能匹配
+            'metart_network': self.MatchStrategy.SMART_MATCH,
+            
+            # Score Group: 智能匹配
+            'scoregroup': self.MatchStrategy.SMART_MATCH,
+            
+            # JapanHDV Network: 返回所有结果（标题搜索，返回全部）
+            'japanhdv_network': self.MatchStrategy.RETURN_ALL,
+            
+            # MatureNL: 智能匹配
+            'maturenl': self.MatchStrategy.SMART_MATCH,
+        }
+        self.logger.info(f"刮削器匹配策略配置完成")
         
         # 初始化翻译管理器（欧美内容只翻译简介）
         translator_config = config.get('translator', {})
@@ -101,6 +138,8 @@ class WesternScraperManager:
             from scrapers.western.AdultPrime_Scraper import AdultPrimeScraper
             from scrapers.western.MetArt_Network_Scraper import MetArtNetworkScraper
             from scrapers.western.ScoreGroup_Scraper import ScoreGroupScraper
+            from scrapers.western.JapanHDV_Network_Scraper import JapanHDVNetworkScraper
+            from scrapers.western.MatureNL_Scraper import MatureNLScraper
             # from scrapers.western.adultempire_scraper import AdultEmpireScraper
             # from scrapers.western.iafd_scraper import IAFDScraper
             
@@ -113,6 +152,8 @@ class WesternScraperManager:
             self.adultprime = AdultPrimeScraper(config, use_scraper=True)  # 添加 AdultPrime 刮削器
             self.metart = MetArtNetworkScraper(config, use_scraper=False)  # 添加 MetArt Network 刮削器
             self.scoregroup = ScoreGroupScraper(config)  # 添加 Score Group 刮削器
+            self.japanhdv = JapanHDVNetworkScraper(config)  # 添加 JapanHDV Network 刮削器
+            self.maturenl = MatureNLScraper(config)  # 添加 MatureNL 刮削器
             # self.adultempire = AdultEmpireScraper(config)
             # self.iafd = IAFDScraper(config)
             
@@ -120,7 +161,7 @@ class WesternScraperManager:
             self.adultempire = None
             self.iafd = None
             
-            self.logger.info("WesternScraperManager initialized with ThePornDB, MindGeek, Gamma, Hustler, MariskaX, AdultPrime, MetArt Network and Score Group scrapers")
+            self.logger.info("WesternScraperManager initialized with ThePornDB, MindGeek, Gamma, Hustler, MariskaX, AdultPrime, MetArt Network, Score Group, JapanHDV Network and MatureNL scrapers")
         except ImportError as e:
             self.logger.warning(f"Failed to import Western scrapers: {e}")
             self.theporndb = None
@@ -131,6 +172,8 @@ class WesternScraperManager:
             self.adultprime = None
             self.metart = None
             self.scoregroup = None
+            self.japanhdv = None
+            self.maturenl = None
             self.adultempire = None
             self.iafd = None
     
@@ -155,7 +198,7 @@ class WesternScraperManager:
         self.logger.info(f"=" * 80)
         
         # 1. 检查刮削器是否可用
-        if not self.theporndb and not self.mindgeek and not self.gamma and not self.mariskax and not self.adultprime and not self.metart:
+        if not self.theporndb and not self.mindgeek and not self.gamma and not self.mariskax and not self.adultprime and not self.metart and not self.maturenl:
             self.logger.error("No scrapers available")
             return []
         
@@ -188,6 +231,7 @@ class WesternScraperManager:
                 
                 # 所有刮削器都应该实现 scrape_multiple 公共接口
                 try:
+                    # 直接调用刮削器的 scrape_multiple 方法
                     results = scraper.scrape_multiple(title, content_type_hint, series)
                     
                     # 统一限制结果数量（由管理器控制）
@@ -198,11 +242,16 @@ class WesternScraperManager:
                     if results:
                         self.logger.info(f"✓ {scraper_name} 返回 {len(results)} 个结果")
                         
+                        # 获取该刮削器的匹配策略
+                        strategy = self.scraper_match_strategies.get(scraper_name, self.MatchStrategy.SMART_MATCH)
+                        self.logger.info(f"使用匹配策略: {strategy.value}")
+                        
                         # 使用 ResultManager 统一处理匹配逻辑
                         results = self.result_manager.process_results_with_matching(
                             results, 
                             title, 
-                            is_date_query=is_date_query(title)
+                            is_date_query=is_date_query(title),
+                            strategy=strategy
                         )
                         return results
                     else:
@@ -252,11 +301,16 @@ class WesternScraperManager:
                         
                         self.logger.info(f"✓ {scraper_name} 返回 {len(results)} 个结果")
                         
+                        # 获取该刮削器的匹配策略
+                        strategy = self.scraper_match_strategies.get(scraper_name, self.MatchStrategy.SMART_MATCH)
+                        self.logger.info(f"使用匹配策略: {strategy.value}")
+                        
                         # 使用 ResultManager 统一处理匹配逻辑
                         results = self.result_manager.process_results_with_matching(
                             results, 
                             title, 
-                            is_date_query=is_date_query(title)
+                            is_date_query=is_date_query(title),
+                            strategy=strategy
                         )
                         return results
                     else:
@@ -282,11 +336,16 @@ class WesternScraperManager:
                     
                     self.logger.info(f"✓ ThePornDB 返回 {len(results)} 个结果")
                     
+                    # 获取 ThePornDB 的匹配策略
+                    strategy = self.scraper_match_strategies.get('theporndb', self.MatchStrategy.SMART_MATCH)
+                    self.logger.info(f"使用匹配策略: {strategy.value}")
+                    
                     # 使用 ResultManager 统一处理匹配逻辑
                     results = self.result_manager.process_results_with_matching(
                         results, 
                         title, 
-                        is_date_query=is_date_query(title)
+                        is_date_query=is_date_query(title),
+                        strategy=strategy
                     )
                     return results
                 else:
@@ -511,10 +570,15 @@ class WesternScraperManager:
             available_scrapers = available_scrapers & self.series_date_search_scrapers
             self.logger.info(f"[查找刮削器] 日期查询模式，只使用支持系列+日期搜索的刮削器: {available_scrapers}")
         
-        # 0. 检查独立刮削器（MariskaX, MetArt Network, Score Group）
+        # 0. 检查独立刮削器（MariskaX, MetArt Network, Score Group, MatureNL）
         if normalized_series == 'mariskax' and self.mariskax and 'mariskax' in available_scrapers:
             self.logger.info(f"[查找刮削器] ✓ 系列 {series_name} 匹配 MariskaX 刮削器")
             return ('mariskax', self.mariskax)
+        
+        # MatureNL 站点
+        if normalized_series == 'maturenl' and self.maturenl and 'maturenl' in available_scrapers:
+            self.logger.info(f"[查找刮削器] ✓ 系列 {series_name} 匹配 MatureNL 刮削器")
+            return ('maturenl', self.maturenl)
         
         # MetArt Network 站点（Straplez, X-Art, MetArt, SexArt, TheLifeErotic 等）
         metart_sites = ['straplez', 'xart', 'metart', 'sexart', 'thelifeerotic', 'metartnetwork', 
@@ -562,6 +626,18 @@ class WesternScraperManager:
         if normalized_series in scoregroup_sites and self.scoregroup and 'scoregroup' in available_scrapers:
             self.logger.info(f"[查找刮削器] ✓ 系列 {series_name} 匹配 Score Group 刮削器")
             return ('scoregroup', self.scoregroup)
+        
+        # JapanHDV Network 站点（从配置文件加载）
+        self.logger.info(f"[查找刮削器] 检查 JapanHDV: japanhdv={self.japanhdv is not None}, has_config={hasattr(self.japanhdv, 'sites_config') if self.japanhdv else False}, in_available={'japanhdv_network' in available_scrapers}")
+        if self.japanhdv and hasattr(self.japanhdv, 'sites_config') and 'japanhdv_network' in available_scrapers:
+            self.logger.info(f"[查找刮削器] 检查 JapanHDV Network，配置站点: {list(self.japanhdv.sites_config.keys())}")
+            for key in self.japanhdv.sites_config.keys():
+                normalized_key = re.sub(r'[^a-zA-Z0-9]', '', key).lower()
+                self.logger.info(f"[查找刮削器] 比较: {normalized_series} vs {normalized_key} (原始: {key})")
+                if normalized_series == normalized_key:
+                    self.logger.info(f"[查找刮削器] ✓ 系列 {series_name} 在 JapanHDV Network 配置中找到 (key={key})")
+                    return ('japanhdv_network', self.japanhdv)
+            self.logger.info(f"[查找刮削器] JapanHDV Network 中未找到匹配: {normalized_series}")
         
         # 1. 检查 AdultPrime 刮削器（匹配任何 AdultPrime 相关的系列名）
         # AdultPrime 包含 104 个子站点，这里简单匹配常见的站点名

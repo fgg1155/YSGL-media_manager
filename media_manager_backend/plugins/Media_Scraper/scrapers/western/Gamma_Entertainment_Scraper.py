@@ -28,7 +28,7 @@ from core.models import ScrapeResult
 from web.request import Request
 
 # 导入工具模块
-from utils.query_parser import calculate_title_match_score, select_best_match, clean_title
+from utils.query_parser import clean_title
 from utils.date_parser import is_date_query, parse_date_query, filter_by_date
 from utils.content_type_filter import filter_by_content_type, log_content_type_debug
 
@@ -800,67 +800,13 @@ class AbstractGammaEntertainmentScraper(BaseScraper):
             
             self.logger.info(f"找到 {len(hits)} 个搜索结果")
             
-            # 过滤匹配的结果
-            if is_date_search:
-                # 日期搜索：所有结果都是匹配的（已经按日期过滤）
-                matched_hits = [(100.0, hit) for hit in hits]
-                self.logger.info(f"日期搜索匹配到 {len(matched_hits)} 个结果")
-            else:
-                # 标题搜索：先尝试精确匹配
-                from utils.query_parser import calculate_title_match_score
-                
-                # 标准化查询字符串用于精确匹配（使用 cleaned_title，因为搜索时用的也是 cleaned_title）
-                normalized_query = self._normalize_title(cleaned_title)
-                self.logger.info(f"标准化查询: '{cleaned_title}' -> '{normalized_query}'")
-                
-                # 第一步：查找精确匹配
-                exact_matches = []
-                for hit in hits:
-                    hit_title = hit.get('title', '')
-                    normalized_hit_title = self._normalize_title(hit_title)
-                    
-                    if normalized_hit_title == normalized_query:
-                        exact_matches.append((100.0, hit))
-                        self.logger.info(f"  ✓ 精确匹配: '{hit_title}' (标准化: '{normalized_hit_title}')")
-                    else:
-                        self.logger.debug(f"  ✗ 不匹配: '{hit_title}' (标准化: '{normalized_hit_title}')")
-                
-                # 如果找到精确匹配，只返回精确匹配的结果
-                if exact_matches:
-                    matched_hits = exact_matches
-                    self.logger.info(f"✓ 找到 {len(exact_matches)} 个精确匹配的结果，忽略其他 {len(hits) - len(exact_matches)} 个结果")
-                else:
-                    # 第二步：如果没有精确匹配，使用模糊匹配
-                    self.logger.info(f"未找到精确匹配，使用模糊匹配")
-                    matched_hits = []
-                    for hit in hits:
-                        hit_title = hit.get('title', '')
-                        score = calculate_title_match_score(cleaned_title, hit_title)
-                        
-                        # 如果匹配度 >= 0.6，认为是匹配的结果
-                        if score >= 0.6:
-                            matched_hits.append((score, hit))
-                            self.logger.debug(f"  模糊匹配: {hit_title} (分数: {score:.2f})")
-                        else:
-                            self.logger.debug(f"  跳过: {hit_title} (分数: {score:.2f})")
-                    
-                    self.logger.info(f"模糊匹配到 {len(matched_hits)} 个结果")
-                
-                # 按匹配度排序
-                matched_hits.sort(key=lambda x: x[0], reverse=True)
-                
-                if not matched_hits:
-                    self.logger.warning(f"没有匹配度足够高的结果")
-                    return []
-                
-                self.logger.info(f"匹配到 {len(matched_hits)} 个结果")
-            
-            # 为每个匹配的场景创建独立的 ScrapeResult
+            # 直接使用所有搜索结果，不进行匹配过滤（由 ResultManager 统一处理）
+            # 为每个搜索结果创建独立的 ScrapeResult
             results = []
-            for i, (score, hit) in enumerate(matched_hits, 1):
+            for i, hit in enumerate(hits, 1):
                 clip_id = str(hit.get('clip_id', ''))
                 scene_title = hit.get('title', '')
-                self.logger.info(f"  处理场景 {i}/{len(matched_hits)}: {scene_title} (clip_id={clip_id}, 匹配度={score:.2f})")
+                self.logger.info(f"  处理场景 {i}/{len(hits)}: {scene_title} (clip_id={clip_id})")
                 
                 # 如果指定了系列名，验证结果是否匹配
                 if series_name:

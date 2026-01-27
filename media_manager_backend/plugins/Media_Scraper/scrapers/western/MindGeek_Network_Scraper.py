@@ -751,39 +751,10 @@ class MindGeekScraper(BaseScraper):
             
             self.logger.info(f"找到 {len(search_results)} 个搜索结果")
             
-            # 使用匹配度过滤，只保留高匹配度的结果
-            from utils.query_parser import calculate_title_match_score
-            
-            # 计算每个结果的匹配度
-            scored_results = []
-            for search_result in search_results:
-                result_title = search_result.get('title', '')
-                score = calculate_title_match_score(search_title, result_title)
-                scored_results.append((score, search_result))
-                self.logger.debug(f"  - {result_title}: 匹配度 {score:.2f}")
-            
-            # 按匹配度降序排序
-            scored_results.sort(key=lambda x: x[0], reverse=True)
-            
-            # 过滤：只保留匹配度 >= 80 的结果，或者至少保留最佳匹配
-            MATCH_THRESHOLD = 80.0
-            filtered_results = []
-            
-            for score, search_result in scored_results:
-                # 保留匹配度 >= 80 的结果
-                if score >= MATCH_THRESHOLD:
-                    filtered_results.append(search_result)
-                # 如果没有任何结果 >= 80，至少保留最佳匹配（第一个）
-                elif not filtered_results and score == scored_results[0][0]:
-                    filtered_results.append(search_result)
-                    self.logger.info(f"  保留最佳匹配（匹配度 {score:.2f}）: {search_result.get('title')}")
-            
-            if len(filtered_results) < len(search_results):
-                self.logger.info(f"匹配度过滤：{len(search_results)} -> {len(filtered_results)} 个结果")
-            
-            # 为每个过滤后的结果获取详细信息
+            # 直接使用所有搜索结果，不进行匹配过滤（由 ResultManager 统一处理）
+            # 为每个搜索结果获取详细信息
             results = []
-            for idx, search_result in enumerate(filtered_results, 1):
+            for idx, search_result in enumerate(search_results, 1):
                 scene_id = str(search_result.get('id', ''))
                 if not scene_id:
                     continue

@@ -279,6 +279,7 @@ pub async fn scrape_media(
     let mut request_json = serde_json::json!({
         "action": "get",
         "id": code,
+        "field_source": "code",  // 标识这是从"番号"字段来的
     });
     
     // 添加可选参数
@@ -287,6 +288,9 @@ pub async fn scrape_media(
     }
     if let Some(series) = &request.series {
         request_json["series"] = serde_json::json!(series);
+    }
+    if let Some(studio) = &request.studio {
+        request_json["studio"] = serde_json::json!(studio);
     }
     
     let request_str = serde_json::to_string(&request_json)
@@ -685,8 +689,10 @@ pub struct ScrapeMediaRequest {
     pub code: Option<String>,
     /// 可选：内容类型（Scene/Movie），用于选择 API
     pub content_type: Option<String>,
-    /// 可选：系列名（用于 MindGeek 判定使用哪个网络的 API）
+    /// 可选：系列名（用于 Western 判定使用哪个网络的 API）
     pub series: Option<String>,
+    /// 可选：片商名（用于 JAV 判定使用哪个片商的刮削器）
+    pub studio: Option<String>,
     /// 可选：直接提供刮削数据（用于用户从多个结果中选择后的导入）
     /// - 单个对象：更新或创建单个媒体
     /// - 数组：批量创建新媒体
@@ -822,8 +828,12 @@ fn apply_scrape_result_to_media(media: &mut crate::models::MediaItem, scrape_dat
     }
     
     // 海报：有值则覆盖
+    info!("检查 poster_url 字段: {:?}", scrape_data.get("poster_url"));
     if let Some(poster) = scrape_data.get("poster_url").and_then(|v| v.as_str()).filter(|s| !s.is_empty()) {
+        info!("✓ 设置封面图: {}", poster);
         let _ = media.set_poster_url(Some(poster.to_string()));
+    } else {
+        warn!("✗ poster_url 字段为空或不是字符串");
     }
     
     // 背景图：有值则覆盖（支持数组格式）

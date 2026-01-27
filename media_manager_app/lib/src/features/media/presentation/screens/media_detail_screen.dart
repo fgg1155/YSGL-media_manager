@@ -163,18 +163,32 @@ class _MediaDetailScreenState extends ConsumerState<MediaDetailScreen> {
             // 插件UI注入点 - media_detail_appbar（根据后端已安装插件过滤）
             ...PluginUIRegistry()
                 .getButtonsFiltered('media_detail_appbar', ref.watch(installedPluginIdsProvider))
-                .map((button) => PluginUIRenderer.renderButton(
-                      button,
-                      context,
-                      contextData: {
-                        'media_id': media.id,
-                        'code': media.code,
-                        'title': media.title,
-                        'series': media.series,
-                        'release_date': media.releaseDate,
-                        // 不包含 media_type，只使用对话框中用户选择的 content_type
-                      },
-                    )),
+                .map((button) {
+                  final contextData = {
+                    'media_id': media.id,
+                    'code': media.code,
+                    'title': media.title,
+                    'series': media.series,
+                    'studio': media.studio,  // 片商名
+                    'release_date': media.releaseDate,
+                    // 不包含 media_type，只使用对话框中用户选择的 content_type
+                  };
+                  
+                  // 调试日志：打印 contextData
+                  print('🔍 Media Detail Context Data:');
+                  print('   media_id: ${media.id}');
+                  print('   code: ${media.code}');
+                  print('   title: ${media.title}');
+                  print('   series: ${media.series}');
+                  print('   studio: ${media.studio}');
+                  print('   release_date: ${media.releaseDate}');
+                  
+                  return PluginUIRenderer.renderButton(
+                    button,
+                    context,
+                    contextData: contextData,
+                  );
+                }),
             
             IconButton(
               icon: const Icon(Icons.edit_outlined, color: Colors.white),

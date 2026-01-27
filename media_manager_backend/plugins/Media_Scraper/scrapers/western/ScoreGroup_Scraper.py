@@ -40,6 +40,13 @@ class ScoreGroupScraper(BaseScraper):
         
         # 加载站点配置
         self.sites_config = self._load_sites_config()
+        
+        # 导入 MatchStrategy（用于配置）
+        import sys
+        from pathlib import Path
+        sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+        from managers.result_manager import MatchStrategy
+        self.MatchStrategy = MatchStrategy
     
     def _scrape_impl(self, query: str) -> Optional[ScrapeResult]:
         """
@@ -62,7 +69,7 @@ class ScoreGroupScraper(BaseScraper):
     def scrape_multiple(self, query: str, content_type_hint: Optional[str] = None, 
                        series: Optional[str] = None) -> List[ScrapeResult]:
         """
-        通过标题搜索多个结果
+        通过标题搜索多个结果（两阶段架构：只返回轻量级结果）
         
         Args:
             query: 搜索关键词
@@ -70,9 +77,13 @@ class ScoreGroupScraper(BaseScraper):
             series: 系列名（站点名，如 pornmegaload, scoreland）
         
         Returns:
-            搜索结果列表（包含完整详细信息）
+            轻量级搜索结果列表（只包含 URL + 标题 + poster）
+        
+        注意：
+            - 这个方法只返回轻量级结果，不获取详细信息
+            - 详细信息由 ResultManager 调用 get_full_details() 按需获取
         """
-        self.logger.info(f"开始搜索: query={query}, series={series}")
+        self.logger.info(f"开始搜索（轻量级）: query={query}, series={series}")
         
         # 移除系列名前缀（如 "Xlgirls-" 或 "Xlgirls "）
         search_query = query
@@ -119,30 +130,14 @@ class ScoreGroupScraper(BaseScraper):
                 self.logger.error(f"搜索请求失败: {response.status_code}")
                 return []
             
-            # 4. 解析搜索结果页面 - 先提取轻量级信息
+            # 4. 解析搜索结果页面 - 只提取轻量级信息
             tree = html.fromstring(response.content)
             lightweight_results = self._extract_search_results(tree, site_config)
             
-            self.logger.info(f"找到 {len(lightweight_results)} 个搜索结果")
+            self.logger.info(f"找到 {len(lightweight_results)} 个轻量级搜索结果")
             
-            # 5. 对每个结果获取详细信息
-            results = []
-            max_results = 20  # 默认最多返回 20 个结果
-            
-            for i, light_result in enumerate(lightweight_results[:max_results], 1):
-                try:
-                    self.logger.info(f"获取详细信息 {i}/{min(len(lightweight_results), max_results)}: {light_result.title}")
-                    
-                    # 获取完整详细信息
-                    full_result = self._scrape_by_url(light_result.url)
-                    if full_result:
-                        results.append(full_result)
-                except Exception as e:
-                    self.logger.error(f"获取详细信息失败: {light_result.url} - {e}")
-                    continue
-            
-            self.logger.info(f"搜索完成，成功获取 {len(results)} 个场景的详细信息")
-            return results
+            # 返回轻量级结果（不获取详细信息）
+            return lightweight_results
             
         except Exception as e:
             self.logger.error(f"搜索失败: {e}")

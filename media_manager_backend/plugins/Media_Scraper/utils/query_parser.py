@@ -400,3 +400,160 @@ def generate_series_title_query(series: str, title: str) -> Optional[str]:
     
     # 标题保持原样（不包含系列名）
     return title
+
+
+def extract_studio_and_code(query: str) -> Tuple[Optional[str], str]:
+    """
+    从输入中提取片商名和番号（JAV 专用）
+    
+    支持格式：
+    - Studio-Code (连字符分隔)
+    - Studio.Code (点号分隔)
+    - Studio Code (空格分隔)
+    - Studio_Code (下划线分隔)
+    
+    Args:
+        query: 输入字符串（如 "1Pondo-081925-001" 或 "Pacopacomama 012426_100"）
+    
+    Returns:
+        (studio_name, code) 元组
+        - studio_name: 片商名（如果有），否则为 None
+        - code: 番号（移除了片商名前缀）
+    
+    Examples:
+        >>> extract_studio_and_code("1Pondo-081925-001")
+        ('1Pondo', '081925-001')
+        
+        >>> extract_studio_and_code("Pacopacomama.012426_100")
+        ('Pacopacomama', '012426_100')
+        
+        >>> extract_studio_and_code("081925-001")
+        (None, '081925-001')
+        
+        >>> extract_studio_and_code("Caribbeancom 010125_100")
+        ('Caribbeancom', '010125_100')
+    """
+    # 移除文件扩展名
+    query_clean = re.sub(r'\.(mp4|mkv|avi|wmv|mov|flv|webm)$', '', query, flags=re.I)
+    
+    # 查找第一个分隔符的位置（连字符、点号、空格、下划线）
+    separators = ['-', '.', ' ', '_']
+    first_sep_pos = -1
+    first_sep = None
+    
+    for sep in separators:
+        pos = query_clean.find(sep)
+        if pos > 0:  # 必须在字符串中间，不能在开头
+            if first_sep_pos == -1 or pos < first_sep_pos:
+                first_sep_pos = pos
+                first_sep = sep
+    
+    if first_sep_pos > 0:
+        potential_studio = query_clean[:first_sep_pos].strip()
+        code_part = query_clean[first_sep_pos + 1:].strip()
+        
+        # 加载片商配置（使用缓存）
+        known_studios = _load_jav_studios()
+        
+        # 规范化片商名（移除特殊字符，转小写）
+        normalized_studio = re.sub(r'[^a-zA-Z0-9]', '', potential_studio).lower()
+        
+        # 检查是否是已知片商
+        if normalized_studio in known_studios:
+            # 移除 code_part 开头的分隔符
+            code_part = code_part.lstrip('.-_ ')
+            return (potential_studio, code_part)
+    
+    # 无法提取片商名，返回原始 query
+    return (None, query)
+
+
+# 片商配置缓存
+_jav_studios_cache = None
+
+
+def _load_jav_studios() -> set:
+    """
+    加载 JAV 片商配置（带缓存）
+    
+    Returns:
+        片商名集合（规范化后的小写名称）
+    """
+    global _jav_studios_cache
+    
+    if _jav_studios_cache is not None:
+        return _jav_studios_cache
+    
+    import csv
+    from pathlib import Path
+    
+    studios = set()
+    
+    # 配置文件路径
+    config_path = Path(__file__).parent.parent / 'config' / 'site' / 'jav_studios.csv'
+    
+    if not config_path.exists():
+        # 如果配置文件不存在，使用默认列表
+        studios = {
+            '1pondo', 'onepondo',
+            'pacopacomama',
+            '10musume', 'tenmusume',
+            'caribbeancom', 'caribbean',
+            'caribbeancompr', 'caribpr',
+            'heyzo',
+            'tokyohot', 'tokyo-hot',
+            'fc2', 'fc2ppv',
+            'heydouga',
+            'kin8tengoku',
+            'muramura',
+            'gachinco',
+        }
+    else:
+        # 从 CSV 文件加载
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                # 跳过注释行，找到 header
+                lines = []
+                for line in f:
+                    stripped = line.strip()
+                    # 跳过空行和注释行
+                    if not stripped or stripped.startswith('#'):
+                        continue
+                    lines.append(line)
+                
+                # 使用过滤后的行创建 CSV reader
+                import io
+                csv_content = ''.join(lines)
+                reader = csv.DictReader(io.StringIO(csv_content))
+                
+                for row in reader:
+                    # 跳过空行
+                    if not row or not row.get('normalized_name'):
+                        continue
+                    
+                    # 只加载启用的片商
+                    if row.get('enabled', 'true').lower() == 'true':
+                        normalized_name = row['normalized_name'].strip().lower()
+                        if normalized_name:
+                            studios.add(normalized_name)
+        except Exception as e:
+            # 加载失败，使用默认列表
+            import logging
+            logging.getLogger(__name__).warning(f"加载 JAV 片商配置失败: {e}，使用默认列表")
+            studios = {
+                '1pondo', 'onepondo',
+                'pacopacomama',
+                '10musume', 'tenmusume',
+                'caribbeancom', 'caribbean',
+                'caribbeancompr', 'caribpr',
+                'heyzo',
+                'tokyohot', 'tokyo-hot',
+                'fc2', 'fc2ppv',
+                'heydouga',
+                'kin8tengoku',
+                'muramura',
+                'gachinco',
+            }
+    
+    _jav_studios_cache = studios
+    return studios

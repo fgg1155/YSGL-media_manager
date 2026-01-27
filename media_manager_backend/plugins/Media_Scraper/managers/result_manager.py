@@ -8,7 +8,8 @@ from typing import List, Optional, Dict, Any
 from dataclasses import dataclass
 from enum import Enum
 
-from .jav_scraper_manager import ScrapeResult
+# 从核心模块导入 ScrapeResult
+from core.models import ScrapeResult
 
 
 logger = logging.getLogger(__name__)
@@ -19,6 +20,19 @@ class ResultMode(Enum):
     SINGLE = "single"      # 单个结果（默认）
     MULTIPLE = "multiple"  # 多个结果（供前端选择）
     ALL = "all"           # 所有结果（不过滤）
+
+
+class MatchStrategy(Enum):
+    """匹配策略枚举
+    
+    不同刮削器可以选择不同的匹配策略：
+    - RETURN_ALL: 返回所有结果（不进行匹配过滤）
+    - SMART_MATCH: 智能匹配（根据查询类型自动选择策略）
+    - BEST_MATCH_ONLY: 只返回最佳匹配的单个结果
+    """
+    RETURN_ALL = "return_all"           # 返回所有结果
+    SMART_MATCH = "smart_match"         # 智能匹配（默认）
+    BEST_MATCH_ONLY = "best_match_only" # 只返回最佳匹配
 
 
 @dataclass
@@ -451,18 +465,59 @@ class ResultManager:
         self,
         results: List[ScrapeResult],
         search_query: str,
-        is_date_query: bool = False
+        is_date_query: bool = False,
+        strategy: MatchStrategy = MatchStrategy.SMART_MATCH
     ) -> List[ScrapeResult]:
         """
-        处理搜索结果，根据查询类型进行智能匹配
+        处理搜索结果，根据匹配策略进行智能匹配
         
         Args:
             results: 搜索结果列表
             search_query: 搜索查询（标题或日期）
             is_date_query: 是否是日期查询
+            strategy: 匹配策略（默认为 SMART_MATCH）
         
         Returns:
             处理后的结果列表
+        
+        匹配策略说明：
+        1. RETURN_ALL: 直接返回所有结果（不进行任何匹配过滤）
+        2. SMART_MATCH: 智能匹配
+           - 只有 1 个结果 → 直接返回
+           - 日期查询 → 返回所有相同日期的结果
+           - 标题查询 → 精准匹配
+             * 有多个相同标题 → 返回所有相同标题的
+             * 只有 1 个匹配 → 返回最佳匹配
+             * 匹配失败 → 返回所有结果
+        3. BEST_MATCH_ONLY: 只返回最佳匹配的单个结果
+           - 只有 1 个结果 → 直接返回
+           - 多个结果 → 返回最佳匹配（如果匹配失败则返回第一个）
+        """
+        # 策略1: 返回所有结果（不进行匹配）
+        if strategy == MatchStrategy.RETURN_ALL:
+            self.logger.info(f"匹配策略: RETURN_ALL，直接返回所有 {len(results)} 个结果")
+            return results
+        
+        # 策略2: 智能匹配（默认）
+        if strategy == MatchStrategy.SMART_MATCH:
+            return self._smart_match(results, search_query, is_date_query)
+        
+        # 策略3: 只返回最佳匹配
+        if strategy == MatchStrategy.BEST_MATCH_ONLY:
+            return self._best_match_only(results, search_query, is_date_query)
+        
+        # 默认：智能匹配
+        self.logger.warning(f"未知匹配策略 {strategy}，使用 SMART_MATCH")
+        return self._smart_match(results, search_query, is_date_query)
+    
+    def _smart_match(
+        self,
+        results: List[ScrapeResult],
+        search_query: str,
+        is_date_query: bool
+    ) -> List[ScrapeResult]:
+        """
+        智能匹配策略
         
         逻辑：
         1. 只有 1 个结果 → 直接返回
@@ -474,12 +529,12 @@ class ResultManager:
         """
         # 1. 只有 1 个结果，直接返回
         if len(results) == 1:
-            self.logger.info(f"只有 1 个结果，直接返回")
+            self.logger.info(f"智能匹配: 只有 1 个结果，直接返回")
             return results
         
         # 2. 日期查询：返回所有结果（已经按日期过滤）
         if is_date_query:
-            self.logger.info(f"日期查询，返回所有 {len(results)} 个相同日期的结果")
+            self.logger.info(f"智能匹配: 日期查询，返回所有 {len(results)} 个相同日期的结果")
             return results
         
         # 3. 标题查询：尝试精准匹配
@@ -490,11 +545,39 @@ class ResultManager:
             same_title_results = [r for r in results if r.title == best_title]
             
             if len(same_title_results) > 1:
-                self.logger.info(f"找到 {len(same_title_results)} 个相同标题的结果，返回所有")
+                self.logger.info(f"智能匹配: 找到 {len(same_title_results)} 个相同标题的结果，返回所有")
                 return same_title_results
             else:
-                self.logger.info(f"精准匹配成功，返回最佳匹配")
+                self.logger.info(f"智能匹配: 精准匹配成功，返回最佳匹配")
                 return [best_match]
         else:
-            self.logger.info(f"精准匹配失败，返回所有 {len(results)} 个结果供用户选择")
+            self.logger.info(f"智能匹配: 精准匹配失败，返回所有 {len(results)} 个结果供用户选择")
             return results
+    
+    def _best_match_only(
+        self,
+        results: List[ScrapeResult],
+        search_query: str,
+        is_date_query: bool
+    ) -> List[ScrapeResult]:
+        """
+        只返回最佳匹配策略
+        
+        逻辑：
+        1. 只有 1 个结果 → 直接返回
+        2. 多个结果 → 返回最佳匹配（如果匹配失败则返回第一个）
+        """
+        # 1. 只有 1 个结果，直接返回
+        if len(results) == 1:
+            self.logger.info(f"最佳匹配: 只有 1 个结果，直接返回")
+            return results
+        
+        # 2. 多个结果：选择最佳匹配
+        best_match = self.select_best_match(results, search_query)
+        if best_match:
+            self.logger.info(f"最佳匹配: 返回最佳匹配结果")
+            return [best_match]
+        else:
+            # 匹配失败，返回第一个结果
+            self.logger.warning(f"最佳匹配: 匹配失败，返回第一个结果")
+            return [results[0]]

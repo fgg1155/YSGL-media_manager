@@ -683,6 +683,33 @@ class _EnhancedSingleScrapeDialogState extends State<_EnhancedSingleScrapeDialog
         // title 模式：使用 title 字段
         newQuery = widget.contextData['title'] as String? ?? '';
         break;
+      case 'studio_code':
+        // studio_code 模式：生成 片商-番号 格式（用于 JAV）
+        final studio = widget.contextData['studio'] as String?;
+        final code = widget.contextData['code'] as String?;
+        
+        // 调试日志
+        print('🔍 studio_code 模式:');
+        print('   studio from contextData: $studio');
+        print('   code from contextData: $code');
+        print('   contextData keys: ${widget.contextData.keys.toList()}');
+        
+        // 如果有 studio 和 code，自动生成
+        if (studio != null && studio.isNotEmpty && code != null && code.isNotEmpty) {
+          newQuery = '$studio-$code';
+          print('   ✅ 生成查询: $newQuery');
+        } 
+        // 如果只有 code，让用户手动输入片商名
+        else if (code != null && code.isNotEmpty) {
+          newQuery = code;  // 先显示番号，让用户在前面加片商名
+          print('   ⚠️ 只有 code，显示: $newQuery');
+        } 
+        // 如果都没有，显示空
+        else {
+          newQuery = '';
+          print('   ❌ 都没有，显示空');
+        }
+        break;
       case 'series_date':
         // series_date 模式：生成 系列.YY.MM.DD 格式
         final seriesDate = _generateSeriesDateQuery();
@@ -1068,6 +1095,16 @@ class _CompactScrapeModeSelector extends StatelessWidget {
           title: '按识别号',
           subtitle: '识别号精确匹配',
           color: Colors.blue,
+          onModeChanged: onModeChanged,
+        ),
+        const SizedBox(height: 6),
+        _CompactModeOptionCard(
+          mode: 'studio_code',
+          selectedMode: selectedMode,
+          icon: Icons.business,
+          title: '按片商+识别号',
+          subtitle: '片商名称+识别号',
+          color: Colors.teal,
           onModeChanged: onModeChanged,
         ),
         const SizedBox(height: 6),

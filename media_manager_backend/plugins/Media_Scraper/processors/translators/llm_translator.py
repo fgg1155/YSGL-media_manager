@@ -65,6 +65,7 @@ class LLMTranslator(BaseTranslator):
         user_prompt = text
         
         # 重试机制
+        last_error = None
         for attempt in range(self.max_retries):
             try:
                 result = await self._call_api(user_prompt)
@@ -73,13 +74,16 @@ class LLMTranslator(BaseTranslator):
                     result = self._remove_cot_markers(result)
                     logger.debug(f"LLM 翻译成功: {text[:50]}... -> {result[:50]}...")
                     return result
+                else:
+                    last_error = "API 返回空结果"
                 
             except Exception as e:
-                logger.warning(f"LLM 翻译失败 (尝试 {attempt + 1}/{self.max_retries}): {e}")
+                last_error = str(e)
+                logger.warning(f"LLM 翻译失败 (尝试 {attempt + 1}/{self.max_retries}): {last_error}")
                 if attempt < self.max_retries - 1:
                     await asyncio.sleep(1 * (attempt + 1))  # 指数退避
         
-        logger.error(f"LLM 翻译失败，已达最大重试次数")
+        logger.error(f"LLM 翻译失败，已达最大重试次数，最后错误: {last_error}")
         return None
     
     async def _call_api(self, user_prompt: str) -> Optional[str]:
@@ -107,21 +111,34 @@ class LLMTranslator(BaseTranslator):
             "max_tokens": 2000
         }
         
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                url,
-                headers=headers,
-                json=payload,
-                timeout=aiohttp.ClientTimeout(total=self.timeout)
-            ) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    if "choices" in data and len(data["choices"]) > 0:
-                        return data["choices"][0]["message"]["content"].strip()
-                else:
-                    error_text = await response.text()
-                    logger.error(f"API 请求失败 ({response.status}): {error_text}")
-                    return None
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    url,
+                    headers=headers,
+                    json=payload,
+                    timeout=aiohttp.ClientTimeout(total=self.timeout)
+                ) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        if "choices" in data and len(data["choices"]) > 0:
+                            return data["choices"][0]["message"]["content"].strip()
+                        else:
+                            logger.error(f"API 响应格式错误: {data}")
+                            return None
+                    else:
+                        error_text = await response.text()
+                        logger.error(f"API 请求失败 ({response.status}): {error_text[:500]}")
+                        return None
+        except asyncio.TimeoutError:
+            logger.error(f"API 请求超时（{self.timeout}秒）")
+            raise
+        except aiohttp.ClientError as e:
+            logger.error(f"API 网络错误: {e}")
+            raise
+        except Exception as e:
+            logger.error(f"API 调用异常: {e}", exc_info=True)
+            raise
     
     @staticmethod
     def _remove_cot_markers(text: str) -> str:
