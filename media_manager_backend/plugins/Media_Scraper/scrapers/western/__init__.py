@@ -13,11 +13,13 @@ from .MindGeek_Network_Scraper import (
     DigitalPlaygroundScraper, MofosScraper, TwistysScraper, SexyHubScraper,
     FakeHubScraper, MileHighScraper, BabesScraper, TransAngelsScraper, LetsDoeItScraper
 )
+from .ScoreGroup_Scraper import ScoreGroupScraper
 
 __all__ = [
     # 'AdultEmpireScraper', 'IAFDScraper',  # 暂时禁用
     'ThePornDBScraper', 'MariskaXScraper', 'AdultPrimeScraper',
     'MindGeekScraper', 'BrazzersScraper', 'RealityKingsScraper', 'BangBrosScraper',
     'DigitalPlaygroundScraper', 'MofosScraper', 'TwistysScraper', 'SexyHubScraper',
-    'FakeHubScraper', 'MileHighScraper', 'BabesScraper', 'TransAngelsScraper', 'LetsDoeItScraper'
+    'FakeHubScraper', 'MileHighScraper', 'BabesScraper', 'TransAngelsScraper', 'LetsDoeItScraper',
+    'ScoreGroupScraper'
 ]

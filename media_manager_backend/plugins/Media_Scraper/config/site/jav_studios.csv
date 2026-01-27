@@ -1,0 +1,36 @@
+# JAV Studios Configuration
+# Format: studio_name,domain,normalized_name,scraper,enabled,priority
+# domain: 片商官方网站域名
+# normalized_name: 规范化名称（用于匹配，小写）
+# scraper: 对应的刮削器名称（1pondo, pacopacomama, 10musume, caribbeancom, caribbeancompr, heyzo, fc2）
+# priority: 优先级（数字越大优先级越高）
+
+studio_name,domain,normalized_name,scraper,enabled,priority
+
+# 一本道系列（1pondo Network）
+1Pondo,www.1pondo.tv,1pondo,1pondo,true,100
+OnePondo,www.1pondo.tv,onepondo,1pondo,true,100
+Pacopacomama,www.pacopacomama.com,pacopacomama,pacopacomama,true,100
+10musume,www.10musume.com,10musume,10musume,true,100
+TenMusume,www.10musume.com,tenmusume,10musume,true,100
+
+# 加勒比系列（Caribbean Network）
+Caribbeancom,www.caribbeancom.com,caribbeancom,caribbeancom,true,100
+Caribbean,www.caribbeancom.com,caribbean,caribbeancom,true,100
+CaribbeancomPR,www.caribbeancompr.com,caribbeancompr,caribbeancompr,true,100
+CaribbeanPR,www.caribbeancompr.com,caribpr,caribbeancompr,true,100
+CaribPR,www.caribbeancompr.com,caribpr,caribbeancompr,true,100
+
+# 其他无码片商
+Heyzo,www.heyzo.com,heyzo,heyzo,true,90
+Tokyo-Hot,www.tokyo-hot.com,tokyohot,tokyohot,true,90
+TokyoHot,www.tokyo-hot.com,tokyohot,tokyohot,true,90
+Kin8tengoku,www.kin8tengoku.com,kin8tengoku,kin8tengoku,true,85
+Muramura,www.muramura.tv,muramura,muramura,true,85
+Gachinco,www.gachinco.com,gachinco,gachinco,true,85
+Heydouga,www.heydouga.com,heydouga,heydouga,true,85
+
+# FC2 系列
+FC2,fc2.com,fc2,fc2,true,95
+FC2-PPV,fc2.com,fc2ppv,fc2,true,95
+FC2PPV,fc2.com,fc2ppv,fc2,true,95

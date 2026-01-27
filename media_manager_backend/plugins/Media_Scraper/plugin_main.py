@@ -230,8 +230,10 @@ class PluginMain:
         Args:
             request: 请求字典，包含：
                 - id: 番号或标题
-                - series: 系列名（可选）
+                - series: 系列名（可选，用于 Western）
+                - studio: 片商名（可选，用于 JAV）
                 - content_type: 内容类型提示（可选）
+                - field_source: 字段来源（可选）："code"表示从番号字段来，"title"表示从标题字段来
         
         Returns:
             刮削结果字典
@@ -240,7 +242,9 @@ class PluginMain:
         """
         id_or_title = request.get('id', '')
         series = request.get('series')
+        studio = request.get('studio')  # 新增：获取片商名
         content_type_hint = request.get('content_type')
+        field_source = request.get('field_source')  # 新增：获取字段来源
         
         # 规范化系列名：移除空格（例如 "Strap Lez" -> "StrapLez"）
         if series:
@@ -263,7 +267,7 @@ class PluginMain:
                 }
             }
         
-        self.logger.info(f"Scraping: {id_or_title}, series: {series}, content_type_hint: {content_type_hint}")
+        self.logger.info(f"Scraping: {id_or_title}, series: {series}, studio: {studio}, content_type_hint: {content_type_hint}, field_source: {field_source}")
         
         try:
             # 1. 检测是否是日期查询（如 "Evilangel.26.01.23"）
@@ -276,8 +280,8 @@ class PluginMain:
                         series = parsed_series
                         self.logger.info(f"使用解析出的系列名: {series}")
             
-            # 2. 如果没有系列名，尝试从 id_or_title 中提取（如 "BrazzersExxtra-Title"）
-            if not series:
+            # 2. 如果没有系列名/片商名，尝试从 id_or_title 中提取
+            if not series and not studio:
                 from utils.query_parser import extract_series_and_title
                 extracted_series, extracted_title = extract_series_and_title(id_or_title)
                 if extracted_series:
@@ -287,12 +291,37 @@ class PluginMain:
             
             # 3. 检测内容类型
             content_type = self.content_detector.detect(id_or_title)
-            self.logger.debug(f"Content type: {content_type}")
+            self.logger.debug(f"检测到内容类型: {content_type}")
             
-            # 4. 调用 scrape() 方法获取结果
+            # 如果 field_source 是 "code"：
+            # - 检测到 JAV：使用 JAV 流程
+            # - 检测到 WESTERN 但有 studio 参数：强制使用 JAV 流程（因为 studio 是 JAV 专用）
+            # - 检测到 WESTERN 且无 studio：使用 WESTERN 流程
+            if field_source == 'code':
+                if content_type == ContentType.JAV:
+                    self.logger.info(f"字段来源为'番号'且检测到 JAV 格式，使用 JAV 刮削流程")
+                elif studio:
+                    # 有 studio 参数说明是 JAV，强制使用 JAV
+                    content_type = ContentType.JAV
+                    self.logger.info(f"字段来源为'番号'且提供了片商名，强制使用 JAV 刮削流程")
+                else:
+                    # 检测为 WESTERN 且无 studio，使用 WESTERN 流程
+                    self.logger.info(f"字段来源为'番号'但检测为欧美内容，使用欧美刮削流程")
+            
+            # 4. 如果有 studio 参数，将其添加到 id_or_title 前面（用于 JAV）
+            scrape_code = id_or_title
+            if studio and content_type == ContentType.JAV:
+                # 如果 id_or_title 已经包含片商名，不重复添加
+                from utils.query_parser import extract_studio_and_code
+                existing_studio, _ = extract_studio_and_code(id_or_title)
+                if not existing_studio:
+                    scrape_code = f"{studio}-{id_or_title}"
+                    self.logger.info(f"添加片商名前缀: {scrape_code}")
+            
+            # 5. 调用 scrape() 方法获取结果
             if content_type == ContentType.JAV:
                 # JAV 内容
-                result = self.jav_manager.scrape(id_or_title)
+                result = self.jav_manager.scrape(scrape_code)
             else:
                 # 欧美内容
                 result = self.western_manager.scrape(id_or_title, series=series, content_type_hint=content_type_hint)
@@ -940,7 +969,12 @@ class PluginMain:
                     self.logger.info(f"从标题中提取到系列名: {series}")
             
             # 3. 检测内容类型
-            detected_content_type = self.content_detector.detect(search_key)
+            # 如果 scrape_mode 是 'code'，强制使用 JAV 流程
+            if scrape_mode == 'code':
+                detected_content_type = ContentType.JAV
+                self.logger.info(f"刮削模式为'code'，强制使用 JAV 刮削流程")
+            else:
+                detected_content_type = self.content_detector.detect(search_key)
             
             # 4. 根据类型选择管理器
             if detected_content_type == ContentType.JAV:

@@ -19,7 +19,7 @@ class CodeInfo:
 class CodeNormalizer:
     """番号规范化器 - 参考 JavSP 的 avid.py"""
     
-         # 老番号厂商前缀映射表（DVD ID 前缀 -> CID 数字前缀）
+    # 老番号厂商前缀映射表（DVD ID 前缀 -> CID 数字前缀）
     OLD_FORMAT_PREFIXES = {
         'SMA': '83',
         'MDLD': 'mdld',
@@ -277,6 +277,10 @@ class CodeNormalizer:
             return CodeNormalizer._normalize_tma(code.upper())
         elif code_type == 'r18':
             return CodeNormalizer._normalize_r18(code.upper())
+        elif code_type == 'ippondo_10musume':
+            return CodeNormalizer._normalize_ippondo_10musume(code)
+        elif code_type == 'ippondo_network':
+            return CodeNormalizer._normalize_ippondo_network(code)
         elif code_type == 'pure_number':
             return CodeNormalizer._normalize_pure_number(code)
         elif code_type == 'mywife':
@@ -359,7 +363,16 @@ class CodeNormalizer:
         if re.match(r'^R18[-_]?\d{3}$', norm):
             return 'r18'
         
-        # 纯数字番号（Caribbeancom 等无码）
+        # 一本道系列番号（需要在 pure_number 之前判断，因为格式更具体）
+        # 10musume 番号：格式 010120_01 或 010120-01 (6位日期 + 2位编号)
+        if re.match(r'^\d{6}[-_]\d{2}$', norm):
+            return 'ippondo_10musume'
+        
+        # 一本道/Pacopacomama/Caribbeancom/CaribbeancomPR 番号：格式 012426_100 或 082713-417 (6位日期 + 3位编号)
+        if re.match(r'^\d{6}[-_]\d{3}$', norm):
+            return 'ippondo_network'
+        
+        # 纯数字番号（其他无码，如果上面都不匹配）
         if re.match(r'^\d{6}[-_]\d{2,3}$', norm):
             return 'pure_number'
         
@@ -693,7 +706,7 @@ class CodeNormalizer:
     
     @staticmethod
     def _normalize_pure_number(code: str) -> CodeInfo:
-        """规范化纯数字番号（Caribbeancom 等无码）"""
+        """规范化纯数字番号（其他无码，不属于一本道系列）"""
         # 062620-001, 122520-001
         match = re.search(r'(\d{6})[-_](\d{2,3})', code)
         if match:
@@ -704,6 +717,40 @@ class CodeNormalizer:
             return CodeInfo(dvdid=dvdid, cid=cid, code_type='pure_number')
         
         return CodeInfo(dvdid=code, cid=code, code_type='pure_number')
+    
+    @staticmethod
+    def _normalize_ippondo_10musume(code: str) -> CodeInfo:
+        """规范化 10musume 番号（6位日期 + 2位编号）"""
+        # 010120_01 或 010120-01
+        match = re.search(r'(\d{6})[-_](\d{2})', code)
+        if match:
+            part1 = match.group(1)
+            part2 = match.group(2)
+            # 统一使用下划线格式
+            dvdid = f"{part1}_{part2}"
+            cid = f"{part1}{part2}"
+            return CodeInfo(dvdid=dvdid, cid=cid, code_type='ippondo_10musume')
+        
+        return CodeInfo(dvdid=code, cid=code, code_type='ippondo_10musume')
+    
+    @staticmethod
+    def _normalize_ippondo_network(code: str) -> CodeInfo:
+        """规范化一本道系列番号（6位日期 + 3位编号）
+        
+        包括：1Pondo, Pacopacomama, Caribbeancom, CaribbeancomPR
+        注意：这些网站使用相同的番号格式，但内容可能不同
+        """
+        # 012426_100 或 082713-417
+        match = re.search(r'(\d{6})[-_](\d{3})', code)
+        if match:
+            part1 = match.group(1)
+            part2 = match.group(2)
+            # 统一使用下划线格式
+            dvdid = f"{part1}_{part2}"
+            cid = f"{part1}{part2}"
+            return CodeInfo(dvdid=dvdid, cid=cid, code_type='ippondo_network')
+        
+        return CodeInfo(dvdid=code, cid=code, code_type='ippondo_network')
     
     @staticmethod
     def _normalize_mywife(code: str) -> CodeInfo:

@@ -100,6 +100,7 @@ class WesternScraperManager:
             from scrapers.western.MariskaX_Scraper import MariskaXScraper
             from scrapers.western.AdultPrime_Scraper import AdultPrimeScraper
             from scrapers.western.MetArt_Network_Scraper import MetArtNetworkScraper
+            from scrapers.western.ScoreGroup_Scraper import ScoreGroupScraper
             # from scrapers.western.adultempire_scraper import AdultEmpireScraper
             # from scrapers.western.iafd_scraper import IAFDScraper
             
@@ -111,6 +112,7 @@ class WesternScraperManager:
             self.mariskax = MariskaXScraper(config, use_scraper=True)  # 添加 MariskaX 刮削器
             self.adultprime = AdultPrimeScraper(config, use_scraper=True)  # 添加 AdultPrime 刮削器
             self.metart = MetArtNetworkScraper(config, use_scraper=False)  # 添加 MetArt Network 刮削器
+            self.scoregroup = ScoreGroupScraper(config)  # 添加 Score Group 刮削器
             # self.adultempire = AdultEmpireScraper(config)
             # self.iafd = IAFDScraper(config)
             
@@ -118,7 +120,7 @@ class WesternScraperManager:
             self.adultempire = None
             self.iafd = None
             
-            self.logger.info("WesternScraperManager initialized with ThePornDB, MindGeek, Gamma, Hustler, MariskaX, AdultPrime and MetArt Network scrapers")
+            self.logger.info("WesternScraperManager initialized with ThePornDB, MindGeek, Gamma, Hustler, MariskaX, AdultPrime, MetArt Network and Score Group scrapers")
         except ImportError as e:
             self.logger.warning(f"Failed to import Western scrapers: {e}")
             self.theporndb = None
@@ -128,9 +130,7 @@ class WesternScraperManager:
             self.mariskax = None
             self.adultprime = None
             self.metart = None
-            self.adultempire = None
-            self.iafd = None
-            self.metart = None
+            self.scoregroup = None
             self.adultempire = None
             self.iafd = None
     
@@ -511,7 +511,7 @@ class WesternScraperManager:
             available_scrapers = available_scrapers & self.series_date_search_scrapers
             self.logger.info(f"[查找刮削器] 日期查询模式，只使用支持系列+日期搜索的刮削器: {available_scrapers}")
         
-        # 0. 检查独立刮削器（MariskaX, MetArt Network）
+        # 0. 检查独立刮削器（MariskaX, MetArt Network, Score Group）
         if normalized_series == 'mariskax' and self.mariskax and 'mariskax' in available_scrapers:
             self.logger.info(f"[查找刮削器] ✓ 系列 {series_name} 匹配 MariskaX 刮削器")
             return ('mariskax', self.mariskax)
@@ -523,6 +523,45 @@ class WesternScraperManager:
         if normalized_series in metart_sites and self.metart and 'metart_network' in available_scrapers:
             self.logger.info(f"[查找刮削器] ✓ 系列 {series_name} 匹配 MetArt Network 刮削器")
             return ('metart_network', self.metart)
+        
+        # Score Group 站点（107个站点 - 完整列表，包含所有官方站点）
+        scoregroup_sites = [
+            # 主要站点
+            'pornmegaload', 'scoreland', 'scoreland2', 'xlgirls', 'scoretv',
+            # 年龄分类站点
+            '40somethingmag', '50plusmilfs', '60plusmilfs', '18eighteen',
+            # 特色站点
+            'legsex', 'naughtymag', 'bigboobbundle', 'bigboobspov',
+            # Big Tit/Big Boob 系列
+            'bigtitangelawhite', 'bigtithitomi', 'bigtithooker', 'bigtitterrynova', 'bigtitvenera',
+            'bigtitkatiethornton', 'bigboobalexya', 'bigboobdaria', 'bigboobvanessay',
+            # 个人站点
+            'ashleysageellison', 'autumnjade', 'blackandstacked', 'linseysworld', 'sarennasworld',
+            'crystalgunnsworld', 'bonedathome', 'bootyliciousmag', 'bustyangelique', 'bustyarianna',
+            'bustydanniashe', 'bustydustystash', 'bustyinescudna', 'bustykellykay', 'bustykerrymarie',
+            'bustylornamorgan', 'bustymerilyn', 'bustyoldsluts', 'bustysammieblack', 'bustylezzies',
+            'cherrybrady', 'chloesworld', 'christymarks', 'daylenerio', 'desiraesworld', 'dianepoppos',
+            'evanottyvideos', 'jessicaturner', 'joanabliss', 'juliamiles', 'karinahart', 'karlajames',
+            'leannecrowvideos', 'megatitsminka', 'mickybells', 'millymarks', 'nataliefiore', 'nicolepeters',
+            'reneerossvideos', 'roxired', 'sharizelvideos', 'stacyvandenbergboobs', 'susiewildin',
+            'tawnypeaks', 'tiffanytowers', 'valoryirene',
+            # 主题站点 - MILF/Granny
+            'cock4stepmom', 'codivorexxx', 'creampieforgranny', 'feedherfuckher',
+            'flatandfuckedmilfs', 'grannygetsafacial', 'grannylovesblack', 'grannylovesyoungcock',
+            'homealonemilfs', 'hornyasianmilfs', 'ibonedyourmom', 'ifuckedtheboss', 
+            'milfbundle', 'milfthreesomes', 'milftugs', 'mommystoytime',
+            'naughtyfootjobs', 'naughtytugs', 'oldhornymilfs', 'pickinguppussy', 'pornloser',
+            'scoreclassics', 'scorevideos', 'silversluts', 'titsandtugs', 'tnatryouts',
+            'yourmomlovesanal', 'yourmomsgotbigtits', 'yourwifemymeat',
+            # 种族/特色主题站点
+            'analqts', 'asiancoochies', 'chicksonblackdicks', 'ebonythots', 
+            'hairycoochies', 'latinacoochies', 'latinmommas',
+            # 通用别名
+            'scoregroup'
+        ]
+        if normalized_series in scoregroup_sites and self.scoregroup and 'scoregroup' in available_scrapers:
+            self.logger.info(f"[查找刮削器] ✓ 系列 {series_name} 匹配 Score Group 刮削器")
+            return ('scoregroup', self.scoregroup)
         
         # 1. 检查 AdultPrime 刮削器（匹配任何 AdultPrime 相关的系列名）
         # AdultPrime 包含 104 个子站点，这里简单匹配常见的站点名

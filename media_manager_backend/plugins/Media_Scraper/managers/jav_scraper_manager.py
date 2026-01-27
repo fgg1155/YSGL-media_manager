@@ -38,6 +38,17 @@ class JAVScraperManager:
         from scrapers.jav.javbus_scraper import JavBusScraper
         from scrapers.jav.javdb_scraper import JAVDBScraper
         from scrapers.jav.fanza_scraper import FanzaScraper
+        from scrapers.jav.ippondo_network_scraper import (
+            OnePondoScraper,
+            PacopacomamaScraper,
+            TenMusumeScraper,
+        )
+        from scrapers.jav.caribbeancom_scraper import (
+            CaribbeancomScraper,
+            CaribbeancomPRScraper,
+        )
+        from scrapers.jav.heyzo_scraper import HeyzoScraper
+        from scrapers.jav.tokyohot_scraper import TokyoHotScraper
         from core.code_normalizer import CodeNormalizer
         from processors.genre_processor import GenreProcessor
         from processors.translators import TranslatorManager, GoogleTranslator, LLMTranslator
@@ -48,6 +59,16 @@ class JAVScraperManager:
         self.javbus = JavBusScraper(config)
         self.javdb = JAVDBScraper(config)
         self.fanza = FanzaScraper(config)
+        
+        # 一本道系列刮削器
+        self.onepondo = OnePondoScraper(config)
+        self.pacopacomama = PacopacomamaScraper(config)
+        self.tenmusume = TenMusumeScraper(config)
+        self.caribbeancom = CaribbeancomScraper(config)
+        self.caribbeancompr = CaribbeancomPRScraper(config)
+        self.heyzo = HeyzoScraper(config)
+        self.tokyohot = TokyoHotScraper(config)
+        
         self.normalizer = CodeNormalizer()
         
         # 初始化 Genre 处理器（仅用于 JAV 内容）
@@ -93,19 +114,29 @@ class JAVScraperManager:
         刮削指定番号
         
         Args:
-            code: 番号（DVD ID 或 CID）
+            code: 番号（DVD ID 或 CID），可能包含片商名前缀（如 "1Pondo-081925-001"）
         
         Returns:
             刮削结果，如果失败返回 None
         """
         self.logger.info(f"开始刮削番号: {code}")
         
+        # 0. 尝试提取片商名和番号（类似 Western 的 extract_series_and_title）
+        from utils.query_parser import extract_studio_and_code
+        studio_name, pure_code = extract_studio_and_code(code)
+        
+        if studio_name:
+            self.logger.info(f"检测到片商名: {studio_name}, 纯番号: {pure_code}")
+        else:
+            self.logger.info(f"未检测到片商名，使用原始输入: {code}")
+            pure_code = code
+        
         # 1. 番号规范化
-        code_info = self.normalizer.normalize(code)
+        code_info = self.normalizer.normalize(pure_code)
         self.logger.info(f"番号规范化: DVD ID={code_info.dvdid}, CID={code_info.cid}, 类型={code_info.code_type}")
         
-        # 2. 根据番号类型选择数据源
-        scrapers = self._select_scrapers(code_info)
+        # 2. 根据番号类型和片商名选择数据源
+        scrapers = self._select_scrapers(code_info, studio_name)
         self.logger.info(f"选择的数据源: {[s[0] for s in scrapers]}")
         
         # 3. 并发刮削
@@ -130,12 +161,13 @@ class JAVScraperManager:
         
         return final_result
     
-    def _select_scrapers(self, code_info) -> List[tuple]:
+    def _select_scrapers(self, code_info, studio_name: Optional[str] = None) -> List[tuple]:
         """
-        根据番号类型选择数据源
+        根据番号类型和片商名选择数据源
         
         Args:
             code_info: 番号信息
+            studio_name: 片商名（可选，如 "1Pondo", "Pacopacomama"）
         
         Returns:
             刮削器列表，格式为 [(name, scraper, code), ...]
@@ -143,6 +175,42 @@ class JAVScraperManager:
         """
         scrapers = []
         code_type = code_info.code_type
+        
+        # 如果提供了片商名，优先使用对应的刮削器
+        if studio_name:
+            self.logger.info(f"根据片商名 {studio_name} 选择刮削器")
+            
+            # 规范化片商名（移除特殊字符，转小写）
+            normalized_studio = re.sub(r'[^a-zA-Z0-9]', '', studio_name).lower()
+            
+            # 片商名到刮削器的映射
+            studio_scraper_map = {
+                '1pondo': ('1pondo', self.onepondo),
+                'onepondo': ('1pondo', self.onepondo),
+                'pacopacomama': ('pacopacomama', self.pacopacomama),
+                '10musume': ('10musume', self.tenmusume),
+                'tenmusume': ('10musume', self.tenmusume),
+                'caribbeancom': ('caribbeancom', self.caribbeancom),
+                'caribbean': ('caribbeancom', self.caribbeancom),
+                'caribbeancompr': ('caribbeancompr', self.caribbeancompr),
+                'caribpr': ('caribbeancompr', self.caribbeancompr),
+                'heyzo': ('heyzo', self.heyzo),
+                'tokyohot': ('tokyohot', self.tokyohot),
+                'tokyohot': ('tokyohot', self.tokyohot),
+            }
+            
+            if normalized_studio in studio_scraper_map:
+                scraper_name, scraper = studio_scraper_map[normalized_studio]
+                if code_info.dvdid:
+                    scrapers.append((scraper_name, scraper, code_info.dvdid))
+                    self.logger.info(f"✓ 使用片商专用刮削器: {scraper_name}")
+                    
+                    # 添加通用刮削器作为备选
+                    scrapers.append(('avsox', self.avsox, code_info.dvdid))
+                    scrapers.append(('javdb', self.javdb, code_info.dvdid))
+                    return scrapers
+            else:
+                self.logger.warning(f"未知的片商名: {studio_name}，使用通用逻辑")
         
         # FC2 番号：使用 JAVDB 和 AVSOX（无码）
         if code_type == 'fc2':
@@ -156,6 +224,31 @@ class JAVScraperManager:
             if code_info.cid:
                 scrapers.append(('fanza', self.fanza, code_info.cid))
             return scrapers
+        
+        # 10musume 番号：格式 010120_01 (6位日期 + 2位编号)
+        if code_type == 'ippondo_10musume':
+            if code_info.dvdid:
+                scrapers.append(('10musume', self.tenmusume, code_info.dvdid))
+                scrapers.append(('avsox', self.avsox, code_info.dvdid))
+                scrapers.append(('javdb', self.javdb, code_info.dvdid))
+            return scrapers
+        
+        # 一本道系列番号：格式 012426_100 (6位日期 + 3位编号)
+        # 由于格式相同，需要尝试所有网站
+        if code_type == 'ippondo_network':
+            if code_info.dvdid:
+                # 优先级：pacopacomama > 1pondo > caribbeancom > caribbeancompr
+                scrapers.append(('pacopacomama', self.pacopacomama, code_info.dvdid))
+                scrapers.append(('1pondo', self.onepondo, code_info.dvdid))
+                scrapers.append(('caribbeancom', self.caribbeancom, code_info.dvdid))
+                scrapers.append(('caribbeancompr', self.caribbeancompr, code_info.dvdid))
+                scrapers.append(('avsox', self.avsox, code_info.dvdid))
+                scrapers.append(('javdb', self.javdb, code_info.dvdid))
+            return scrapers
+        
+        # Tokyo-Hot 番号：n开头+4位数字（如 n2046）
+        if code_info.dvdid and re.match(r'^n\d{4}$', code_info.dvdid, re.IGNORECASE):
+            return self._select_scrapers_for_tokyohot(code_info)
         
         # 无码番号（一本道、加勒比等）：优先使用 AVSOX
         # 无码番号特征：纯数字格式（如 082713-417, 032620_001）
@@ -206,6 +299,25 @@ class JAVScraperManager:
                 return True
         
         return False
+    
+    def _select_scrapers_for_tokyohot(self, code_info) -> List[tuple]:
+        """
+        Tokyo-Hot 番号专用选择器
+        
+        Args:
+            code_info: 番号信息
+        
+        Returns:
+            刮削器列表
+        """
+        scrapers = []
+        if code_info.dvdid:
+            # Tokyo-Hot 优先
+            scrapers.append(('tokyohot', self.tokyohot, code_info.dvdid))
+            # 备用通用刮削器
+            scrapers.append(('avsox', self.avsox, code_info.dvdid))
+            scrapers.append(('javdb', self.javdb, code_info.dvdid))
+        return scrapers
     
     def _scrape_concurrent(self, scrapers: List[tuple]) -> List[ScrapeResult]:
         """
@@ -369,13 +481,24 @@ class JAVScraperManager:
             if result.genres:
                 all_genres.extend(result.genres)
         
-        # 处理封面URL：优先使用非JAVDB来源（避免水印）
+        # 处理封面URL：根据番号类型（有码/无码）使用不同优先级
         if poster_urls:
-            # 优先级：fanza > javlibrary > javbus > avsox > javdb
-            for source in ['fanza', 'javlibrary', 'javbus', 'avsox', 'javdb']:
+            # 判断是否为无码番号
+            is_uncensored = merged.code and self._is_uncensored_code(merged.code)
+            
+            if is_uncensored:
+                # 无码番号优先级：官方无码站 > 通用站 > javdb（避免水印）
+                # 官方站：一本道系列、tokyohot、heyzo
+                # 通用站：avsox、javbus、javlibrary
+                poster_priority = ['1pondo', 'pacopacomama', '10musume', 'caribbeancom', 'caribbeancompr', 'tokyohot', 'heyzo', 'avsox', 'javbus', 'javlibrary', 'javdb']
+            else:
+                # 有码番号优先级：fanza > javlibrary > javbus > javdb（避免水印）
+                poster_priority = ['fanza', 'javlibrary', 'javbus', 'avsox', 'javdb']
+            
+            for source in poster_priority:
                 if source in poster_urls:
                     merged.poster_url = poster_urls[source]
-                    self.logger.debug(f"选择封面来源: {source}")
+                    self.logger.debug(f"选择封面来源: {source} (无码={is_uncensored})")
                     break
         
         # 处理Genres：使用GenreProcessor进行翻译和去重
@@ -424,6 +547,7 @@ class JAVScraperManager:
                 value = getattr(result, field, None)
                 
                 if not value or not isinstance(value, str):
+                    self.logger.debug(f"字段 {field} 为空或非字符串，跳过翻译")
                     continue
                 
                 # 检查是否为日语（简单判断：包含日文字符）
@@ -431,22 +555,46 @@ class JAVScraperManager:
                     self.logger.debug(f"字段 {field} 不是日语，跳过翻译")
                     continue
                 
-                # 翻译
+                # 翻译（添加超时保护）
                 try:
-                    translated = await self.translator.translate(value, "ja", "zh-CN")
+                    translated = await asyncio.wait_for(
+                        self.translator.translate(value, "ja", "zh-CN"),
+                        timeout=60  # 单个字段翻译最多60秒
+                    )
                     if translated:
                         setattr(result, field, translated)
                         self.logger.info(f"字段 {field} 翻译成功")
                     else:
                         self.logger.warning(f"字段 {field} 翻译失败，保留原文")
+                except asyncio.TimeoutError:
+                    self.logger.error(f"字段 {field} 翻译超时（60秒），保留原文")
                 except Exception as e:
-                    self.logger.error(f"字段 {field} 翻译异常: {e}")
+                    self.logger.error(f"字段 {field} 翻译异常: {e}", exc_info=True)
         
-        # 运行异步任务
+        # 运行异步任务（添加总超时保护）
         try:
-            asyncio.run(translate_async())
+            # 使用 asyncio.run() 确保任务完全完成
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                # 总超时：字段数 * 60秒 + 30秒缓冲
+                total_timeout = len(self.translation_fields) * 60 + 30
+                loop.run_until_complete(
+                    asyncio.wait_for(translate_async(), timeout=total_timeout)
+                )
+            finally:
+                # 确保所有任务都被取消
+                pending = asyncio.all_tasks(loop)
+                for task in pending:
+                    task.cancel()
+                # 等待所有任务取消完成
+                if pending:
+                    loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+                loop.close()
+        except asyncio.TimeoutError:
+            self.logger.error(f"翻译过程总超时，保留原文")
         except Exception as e:
-            self.logger.error(f"翻译过程异常: {e}")
+            self.logger.error(f"翻译过程异常: {e}", exc_info=True)
         
         return result
     
