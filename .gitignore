@@ -132,13 +132,30 @@ test_*.html
 # 插件临时文件和测试数据
 # ============================================
 
-# MatureNL 测试数据
-media_manager_backend/plugins/Media_Scraper/mature.nl*.txt
-media_manager_backend/plugins/Media_Scraper/caribbean_page.html
-media_manager_backend/plugins/Media_Scraper/搜索方式.txt
+# 测试 HTML 页面
+media_manager_backend/plugins/Media_Scraper/*.html
 
-# 插件文档（临时）
-media_manager_backend/plugins/Media_Scraper/docs/ScoreGroup_Usage.md
+# 测试文本文件（中文）
+media_manager_backend/plugins/Media_Scraper/*.txt
+media_manager_backend/plugins/Media_Scraper/*搜索*.txt
+media_manager_backend/plugins/Media_Scraper/*详情*.txt
+
+# 临时文档
+media_manager_backend/plugins/Media_Scraper/docs/*.md
+!media_manager_backend/plugins/Media_Scraper/docs/README.md
 
 # 配置备份文件
 media_manager_backend/plugins/Media_Scraper/config/*_back.*
+media_manager_backend/plugins/Media_Scraper/config/*.backup
+
+# 翻译缓存（可选：如果不想提交缓存）
+# media_manager_backend/plugins/Media_Scraper/cache/translation_cache.json
+
+# 插件日志文件
+media_manager_backend/plugins/Media_Scraper/*.log
+media_manager_backend/plugins/Media_Scraper/logs/
+
+# Python 缓存
+media_manager_backend/plugins/Media_Scraper/**/__pycache__/
+media_manager_backend/plugins/Media_Scraper/**/*.pyc
+media_manager_backend/plugins/Media_Scraper/**/*.pyo
