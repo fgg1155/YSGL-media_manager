@@ -127,3 +127,18 @@ test_*.html
 # 备份文件
 *.bak
 *.backup
+
+# ============================================
+# 插件临时文件和测试数据
+# ============================================
+
+# MatureNL 测试数据
+media_manager_backend/plugins/Media_Scraper/mature.nl*.txt
+media_manager_backend/plugins/Media_Scraper/caribbean_page.html
+media_manager_backend/plugins/Media_Scraper/搜索方式.txt
+
+# 插件文档（临时）
+media_manager_backend/plugins/Media_Scraper/docs/ScoreGroup_Usage.md
+
+# 配置备份文件
+media_manager_backend/plugins/Media_Scraper/config/*_back.*
