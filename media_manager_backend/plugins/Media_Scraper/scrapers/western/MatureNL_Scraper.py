@@ -45,6 +45,11 @@ class MatureNLScraper:
         """
         self.config = config
         self.logger = logging.getLogger(__name__)
+        
+        # 加载 IP 映射配置
+        self._load_ip_mapping(config)
+        
+        # 初始化请求对象（会使用 IP 映射）
         self.request = Request(config)
         
         # 加载站点配置
@@ -56,6 +61,58 @@ class MatureNLScraper:
         self.filter_male_actors = actor_config.get('filter_male_actors', True)
         self.male_actors = self._load_male_actors(actor_config.get('male_actors_file', 'config/male_actors.json'))
         self.logger.info(f"男演员过滤: {'启用' if self.filter_male_actors else '禁用'}，男演员列表: {len(self.male_actors)} 个")
+    
+    def _load_ip_mapping(self, config: Dict[str, Any]):
+        """
+        加载 IP 映射配置
+        
+        Args:
+            config: 配置字典
+        """
+        import yaml
+        
+        # 确保 network 配置存在
+        if 'network' not in config:
+            config['network'] = {}
+        
+        # 如果配置中已经有 ip_mapping，保留它（优先使用传入的配置）
+        existing_mapping = config['network'].get('ip_mapping', {})
+        
+        try:
+            # 加载 IP 映射文件: config/map/ip_mapping.yaml
+            ip_mapping_path = Path(__file__).parent.parent.parent / 'config' / 'map' / 'ip_mapping.yaml'
+            
+            if ip_mapping_path.exists():
+                with open(ip_mapping_path, 'r', encoding='utf-8') as f:
+                    ip_mapping_config = yaml.safe_load(f) or {}
+                
+                # 过滤掉注释和空值
+                ip_mapping = {}
+                for domain, ip in ip_mapping_config.items():
+                    if isinstance(domain, str) and isinstance(ip, str) and not domain.startswith('#'):
+                        ip_mapping[domain] = ip
+                
+                # 合并：文件中的映射 + 已有的映射（已有的优先）
+                ip_mapping.update(existing_mapping)
+                
+                if ip_mapping:
+                    config['network']['ip_mapping'] = ip_mapping
+                    self.logger.info(f"加载 IP 映射配置: {len(ip_mapping)} 个域名")
+                    # 只显示 MatureNL 相关的映射
+                    for domain, ip in ip_mapping.items():
+                        if 'mature.nl' in domain:
+                            self.logger.info(f"  {domain} -> {ip}")
+                else:
+                    self.logger.info("未找到有效的 IP 映射")
+            else:
+                # 文件不存在，但如果有传入的映射，仍然使用
+                if existing_mapping:
+                    self.logger.info(f"IP 映射文件不存在，使用提供的映射: {len(existing_mapping)} 个域名")
+                else:
+                    self.logger.info(f"IP 映射文件不存在: {ip_mapping_path}，使用直连")
+        except Exception as e:
+            self.logger.warning(f"加载 IP 映射失败: {e}")
+            config['network']['ip_mapping'] = {}
     
     def _load_sites_config(self) -> Dict[str, Dict[str, Any]]:
         """
