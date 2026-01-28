@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -634,6 +635,8 @@ class _CreateActorDialogState extends ConsumerState<CreateActorDialog> with Load
                     labelText: '姓名 *',
                     hintText: '输入演员姓名',
                   ),
+                  textInputAction: TextInputAction.next,
+                  onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return '请输入姓名';
@@ -648,6 +651,10 @@ class _CreateActorDialogState extends ConsumerState<CreateActorDialog> with Load
                     labelText: '头像URL',
                     hintText: '圆形小头像（用于媒体详情页）',
                   ),
+                  keyboardType: TextInputType.url,
+                  textInputAction: TextInputAction.next,
+                  autocorrect: false,
+                  onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -657,6 +664,9 @@ class _CreateActorDialogState extends ConsumerState<CreateActorDialog> with Load
                     hintText: '多个URL用换行分隔',
                   ),
                   maxLines: 3,
+                  keyboardType: TextInputType.multiline,
+                  textInputAction: TextInputAction.newline,
+                  autocorrect: false,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -665,6 +675,10 @@ class _CreateActorDialogState extends ConsumerState<CreateActorDialog> with Load
                     labelText: '封面URL',
                     hintText: '竖版海报（用于演员列表卡片）',
                   ),
+                  keyboardType: TextInputType.url,
+                  textInputAction: TextInputAction.next,
+                  autocorrect: false,
+                  onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -673,6 +687,10 @@ class _CreateActorDialogState extends ConsumerState<CreateActorDialog> with Load
                     labelText: '背景图URL',
                     hintText: '横版大图（用于详情页背景）',
                   ),
+                  keyboardType: TextInputType.url,
+                  textInputAction: TextInputAction.next,
+                  autocorrect: false,
+                  onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -681,6 +699,8 @@ class _CreateActorDialogState extends ConsumerState<CreateActorDialog> with Load
                     labelText: '国籍',
                     hintText: '如：日本、美国',
                   ),
+                  textInputAction: TextInputAction.next,
+                  onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -689,6 +709,8 @@ class _CreateActorDialogState extends ConsumerState<CreateActorDialog> with Load
                     labelText: '出生日期',
                     hintText: 'YYYY-MM-DD',
                   ),
+                  textInputAction: TextInputAction.next,
+                  onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -698,6 +720,8 @@ class _CreateActorDialogState extends ConsumerState<CreateActorDialog> with Load
                     hintText: '输入演员简介',
                   ),
                   maxLines: 3,
+                  keyboardType: TextInputType.multiline,
+                  textInputAction: TextInputAction.newline,
                 ),
               ],
             ),

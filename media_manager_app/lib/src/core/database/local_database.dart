@@ -21,7 +21,7 @@ class LocalDatabase {
 
     return await openDatabase(
       path,
-      version: 5,  // 增加版本号以添加演员图片字段
+      version: 7,  // 增加版本号以添加 cover_video_url 字段
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
       onConfigure: (db) async {
@@ -61,6 +61,7 @@ class LocalDatabase {
         download_links TEXT,
         preview_urls TEXT,
         preview_video_urls TEXT,
+        cover_video_url TEXT,
         studio TEXT,
         series TEXT,
         created_at TEXT NOT NULL,
@@ -206,6 +207,34 @@ class LocalDatabase {
       await db.execute('ALTER TABLE actors ADD COLUMN poster_url TEXT');
       
       print('✓ Actor image fields added (migration v4 -> v5)');
+    }
+    
+    if (oldVersion < 6) {
+      // 将 backdrop_url 从单个字符串迁移到 JSON 数组格式
+      // Step 1: 添加临时列
+      await db.execute('ALTER TABLE media ADD COLUMN backdrop_url_new TEXT DEFAULT \'[]\'');
+      
+      // Step 2: 迁移数据
+      await db.execute('''
+        UPDATE media 
+        SET backdrop_url_new = CASE 
+          WHEN backdrop_url IS NOT NULL AND backdrop_url != '' THEN '["' || backdrop_url || '"]'
+          ELSE '[]'
+        END
+      ''');
+      
+      // Step 3: 删除旧列（SQLite 不支持直接删除列，需要重建表）
+      // 由于 SQLite 限制，我们保留旧列，只使用新列
+      // 在新版本中，代码会优先使用 backdrop_url_new
+      
+      print('✓ Backdrop URL migrated to array format (migration v5 -> v6)');
+    }
+    
+    if (oldVersion < 7) {
+      // 添加 cover_video_url 字段
+      await db.execute('ALTER TABLE media ADD COLUMN cover_video_url TEXT');
+      
+      print('✓ Cover video URL field added (migration v6 -> v7)');
     }
   }
 
@@ -473,6 +502,45 @@ class LocalDatabase {
 
   // ==================== Helper Methods ====================
 
+  /// 解析 backdrop_url 字段（支持新旧格式）
+  List<String> _parseBackdropUrl(Map<String, dynamic> map) {
+    // 优先使用新格式（backdrop_url_new）
+    final backdropUrlNew = map['backdrop_url_new'];
+    if (backdropUrlNew != null && backdropUrlNew is String && backdropUrlNew.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(backdropUrlNew);
+        if (decoded is List) {
+          return decoded.cast<String>();
+        }
+      } catch (e) {
+        print('Error parsing backdrop_url_new: $e');
+      }
+    }
+    
+    // 回退到旧格式（backdrop_url）
+    final backdropUrl = map['backdrop_url'];
+    if (backdropUrl != null && backdropUrl is String && backdropUrl.isNotEmpty) {
+      try {
+        // 尝试作为 JSON 数组解析
+        if (backdropUrl.startsWith('[')) {
+          final decoded = jsonDecode(backdropUrl);
+          if (decoded is List) {
+            return decoded.cast<String>();
+          }
+        } else {
+          // 单个字符串，转换为数组
+          return [backdropUrl];
+        }
+      } catch (e) {
+        print('Error parsing backdrop_url: $e');
+        // 如果解析失败，当作单个字符串
+        return [backdropUrl];
+      }
+    }
+    
+    return [];
+  }
+
   /// MediaItem 转 Map
   Map<String, dynamic> _mediaToMap(MediaItem media) {
     return {
@@ -486,7 +554,7 @@ class LocalDatabase {
       'rating': media.rating,
       'vote_count': media.voteCount,
       'poster_url': media.posterUrl,
-      'backdrop_url': media.backdropUrl,
+      'backdrop_url': jsonEncode(media.backdropUrl),  // 存储为 JSON 数组
       'overview': media.overview,
       'runtime': media.runtime,
       'release_date': media.releaseDate,
@@ -502,6 +570,7 @@ class LocalDatabase {
       'download_links': jsonEncode(media.downloadLinks.map((l) => l.toJson()).toList()),
       'preview_urls': jsonEncode(media.previewUrls),
       'preview_video_urls': jsonEncode(media.previewVideoUrls),
+      'cover_video_url': media.coverVideoUrl,
       'studio': media.studio,
       'series': media.series,
       'created_at': media.createdAt.toIso8601String(),
@@ -625,9 +694,7 @@ class LocalDatabase {
       rating: map['rating'] as double?,
       voteCount: map['vote_count'] as int?,
       posterUrl: map['poster_url'] as String?,
-      backdropUrl: (map['backdrop_url'] as String?)?.isNotEmpty == true 
-          ? [map['backdrop_url'] as String]
-          : [],
+      backdropUrl: _parseBackdropUrl(map),
       overview: map['overview'] as String?,
       runtime: map['runtime'] as int?,
       releaseDate: map['release_date'] as String?,
@@ -643,6 +710,7 @@ class LocalDatabase {
       downloadLinks: downloadLinks,
       previewUrls: previewUrls,
       previewVideoUrls: previewVideoUrls,
+      coverVideoUrl: map['cover_video_url'] as String?,
       studio: map['studio'] as String?,
       series: map['series'] as String?,
       createdAt: DateTime.parse(map['created_at'] as String),

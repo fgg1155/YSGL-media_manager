@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
@@ -9,6 +10,8 @@ import '../../../../core/providers/app_providers.dart';
 import '../../../../shared/widgets/studio_autocomplete_field.dart';
 import '../../../../shared/widgets/series_autocomplete_field.dart';
 import '../../../../shared/widgets/media_card.dart';
+import '../../../../shared/utils/decimal_input_formatter.dart';
+import '../../../../shared/utils/digits_input_formatter.dart';
 import '../../providers/media_providers.dart';
 
 class MediaEditScreen extends ConsumerStatefulWidget {
@@ -412,6 +415,8 @@ class _MediaEditScreenState extends ConsumerState<MediaEditScreen> {
               hintText: '输入媒体标题',
               border: OutlineInputBorder(),
             ),
+            textInputAction: TextInputAction.next,
+            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
             validator: (v) => v?.isEmpty == true ? '标题不能为空' : null,
             onChanged: (_) => _onFieldChanged(),
           ),
@@ -424,6 +429,8 @@ class _MediaEditScreenState extends ConsumerState<MediaEditScreen> {
               hintText: '输入原始标题（可选）',
               border: OutlineInputBorder(),
             ),
+            textInputAction: TextInputAction.next,
+            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
             onChanged: (_) => _onFieldChanged(),
           ),
           const SizedBox(height: 16),
@@ -435,6 +442,8 @@ class _MediaEditScreenState extends ConsumerState<MediaEditScreen> {
               hintText: '如: ABC-123',
               border: OutlineInputBorder(),
             ),
+            textInputAction: TextInputAction.next,
+            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
             onChanged: (_) => _onFieldChanged(),
           ),
           const SizedBox(height: 16),
@@ -450,6 +459,9 @@ class _MediaEditScreenState extends ConsumerState<MediaEditScreen> {
                     border: OutlineInputBorder(),
                   ),
                   keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.next,
+                  inputFormatters: [DigitsInputFormatter()],
+                  onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                   onChanged: (_) => _onFieldChanged(),
                 ),
               ),
@@ -462,6 +474,8 @@ class _MediaEditScreenState extends ConsumerState<MediaEditScreen> {
                     hintText: '2024-12-26',
                     border: OutlineInputBorder(),
                   ),
+                  textInputAction: TextInputAction.next,
+                  onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                   onChanged: (_) => _onFieldChanged(),
                 ),
               ),
@@ -497,6 +511,8 @@ class _MediaEditScreenState extends ConsumerState<MediaEditScreen> {
               hintText: '动作, 科幻, 冒险（逗号分隔）',
               border: OutlineInputBorder(),
             ),
+            textInputAction: TextInputAction.next,
+            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
             onChanged: (_) => _onFieldChanged(),
           ),
           const SizedBox(height: 16),
@@ -511,7 +527,12 @@ class _MediaEditScreenState extends ConsumerState<MediaEditScreen> {
                     hintText: '0-10',
                     border: OutlineInputBorder(),
                   ),
-                  keyboardType: TextInputType.number,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  textInputAction: TextInputAction.next,
+                  inputFormatters: [
+                    DecimalInputFormatter(decimalPlaces: 1),  // 最多1位小数
+                  ],
+                  onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                   onChanged: (_) => _onFieldChanged(),
                 ),
               ),
@@ -525,6 +546,9 @@ class _MediaEditScreenState extends ConsumerState<MediaEditScreen> {
                     border: OutlineInputBorder(),
                   ),
                   keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.next,
+                  inputFormatters: [DigitsInputFormatter()],
+                  onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                   onChanged: (_) => _onFieldChanged(),
                 ),
               ),
@@ -545,6 +569,8 @@ class _MediaEditScreenState extends ConsumerState<MediaEditScreen> {
               alignLabelWithHint: true,
             ),
             maxLines: 5,
+            keyboardType: TextInputType.multiline,
+            textInputAction: TextInputAction.newline,
             onChanged: (_) => _onFieldChanged(),
           ),
           const SizedBox(height: 24),
@@ -561,6 +587,10 @@ class _MediaEditScreenState extends ConsumerState<MediaEditScreen> {
               helperText: '用于列表/网格视图显示',
               border: OutlineInputBorder(),
             ),
+            keyboardType: TextInputType.url,
+            textInputAction: TextInputAction.next,
+            autocorrect: false,
+            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
             onChanged: (_) => _onFieldChanged(),
           ),
           const SizedBox(height: 16),
@@ -573,6 +603,10 @@ class _MediaEditScreenState extends ConsumerState<MediaEditScreen> {
               helperText: '用于详情页背景显示',
               border: OutlineInputBorder(),
             ),
+            keyboardType: TextInputType.url,
+            textInputAction: TextInputAction.next,
+            autocorrect: false,
+            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
             onChanged: (_) => _onFieldChanged(),
           ),
           const SizedBox(height: 16),
@@ -586,6 +620,9 @@ class _MediaEditScreenState extends ConsumerState<MediaEditScreen> {
               alignLabelWithHint: true,
             ),
             maxLines: 5,
+            keyboardType: TextInputType.multiline,
+            textInputAction: TextInputAction.newline,
+            autocorrect: false,
             onChanged: (_) => _onFieldChanged(),
           ),
           const SizedBox(height: 16),
@@ -600,6 +637,9 @@ class _MediaEditScreenState extends ConsumerState<MediaEditScreen> {
               alignLabelWithHint: true,
             ),
             maxLines: 3,
+            keyboardType: TextInputType.multiline,
+            textInputAction: TextInputAction.newline,
+            autocorrect: false,
             onChanged: (_) => _onFieldChanged(),
           ),
           const SizedBox(height: 16),
@@ -612,6 +652,10 @@ class _MediaEditScreenState extends ConsumerState<MediaEditScreen> {
               helperText: '用于卡片悬停播放（短视频缩略图）',
               border: OutlineInputBorder(),
             ),
+            keyboardType: TextInputType.url,
+            textInputAction: TextInputAction.next,
+            autocorrect: false,
+            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
             onChanged: (_) => _onFieldChanged(),
           ),
           const SizedBox(height: 24),

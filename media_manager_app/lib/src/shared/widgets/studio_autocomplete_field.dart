@@ -97,6 +97,8 @@ class _StudioAutocompleteFieldState
                 hintText: widget.hintText ?? '输入制作商名称',
                 border: const OutlineInputBorder(),
               ),
+          textInputAction: TextInputAction.next,
+          onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
           onChanged: (value) {
             widget.controller.text = value;
             widget.onChanged?.call(value);

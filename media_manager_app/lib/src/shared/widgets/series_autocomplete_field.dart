@@ -102,6 +102,8 @@ class _SeriesAutocompleteFieldState
                 hintText: widget.hintText ?? '输入系列名称',
                 border: const OutlineInputBorder(),
               ),
+          textInputAction: TextInputAction.next,
+          onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
           onChanged: (value) {
             widget.controller.text = value;
             widget.onChanged?.call(value);

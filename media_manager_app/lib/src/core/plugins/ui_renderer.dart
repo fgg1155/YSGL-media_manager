@@ -8,6 +8,7 @@ import 'ui_models.dart';
 import 'ui_registry.dart';
 import 'enhanced_dialog_renderer.dart';
 import '../services/api_service.dart';
+import '../../shared/utils/digits_input_formatter.dart';
 import '../services/backend_mode.dart';
 import '../config/app_config.dart';
 import '../providers/app_providers.dart';
@@ -2073,6 +2074,8 @@ class _SmartDialogState extends State<_SmartDialog> {
             border: const OutlineInputBorder(),
           ),
           initialValue: widget.formData[field.id]?.toString() ?? '',
+          textInputAction: TextInputAction.next,
+          onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
           validator: field.required
               ? (value) {
                   if (value == null || value.isEmpty) {
@@ -2094,6 +2097,9 @@ class _SmartDialogState extends State<_SmartDialog> {
             border: const OutlineInputBorder(),
           ),
           keyboardType: TextInputType.number,
+          textInputAction: TextInputAction.next,
+          inputFormatters: [DigitsInputFormatter()],
+          onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
           initialValue: widget.formData[field.id]?.toString() ?? '',
           validator: field.required
               ? (value) {
