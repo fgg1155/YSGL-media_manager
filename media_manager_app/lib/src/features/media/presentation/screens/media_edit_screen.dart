@@ -10,8 +10,7 @@ import '../../../../core/providers/app_providers.dart';
 import '../../../../shared/widgets/studio_autocomplete_field.dart';
 import '../../../../shared/widgets/series_autocomplete_field.dart';
 import '../../../../shared/widgets/media_card.dart';
-import '../../../../shared/utils/decimal_input_formatter.dart';
-import '../../../../shared/utils/digits_input_formatter.dart';
+import '../../../../shared/widgets/app_text_field.dart';
 import '../../providers/media_providers.dart';
 
 class MediaEditScreen extends ConsumerStatefulWidget {
@@ -408,42 +407,27 @@ class _MediaEditScreenState extends ConsumerState<MediaEditScreen> {
           _buildSectionTitle('基本信息'),
           const SizedBox(height: 12),
           
-          TextFormField(
+          AppTextField(
             controller: _titleController,
-            decoration: const InputDecoration(
-              labelText: '标题 *',
-              hintText: '输入媒体标题',
-              border: OutlineInputBorder(),
-            ),
-            textInputAction: TextInputAction.next,
-            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
-            validator: (v) => v?.isEmpty == true ? '标题不能为空' : null,
+            labelText: '标题 *',
+            hintText: '输入媒体标题',
+            required: true,
             onChanged: (_) => _onFieldChanged(),
           ),
           const SizedBox(height: 16),
 
-          TextFormField(
+          AppTextField(
             controller: _originalTitleController,
-            decoration: const InputDecoration(
-              labelText: '原始标题',
-              hintText: '输入原始标题（可选）',
-              border: OutlineInputBorder(),
-            ),
-            textInputAction: TextInputAction.next,
-            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+            labelText: '原始标题',
+            hintText: '输入原始标题（可选）',
             onChanged: (_) => _onFieldChanged(),
           ),
           const SizedBox(height: 16),
 
-          TextFormField(
+          AppTextField(
             controller: _codeController,
-            decoration: const InputDecoration(
-              labelText: '识别码',
-              hintText: '如: ABC-123',
-              border: OutlineInputBorder(),
-            ),
-            textInputAction: TextInputAction.next,
-            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+            labelText: '识别码',
+            hintText: '如: ABC-123',
             onChanged: (_) => _onFieldChanged(),
           ),
           const SizedBox(height: 16),
@@ -451,31 +435,20 @@ class _MediaEditScreenState extends ConsumerState<MediaEditScreen> {
           Row(
             children: [
               Expanded(
-                child: TextFormField(
+                child: AppTextField(
                   controller: _yearController,
-                  decoration: const InputDecoration(
-                    labelText: '年份',
-                    hintText: '2024',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.number,
-                  textInputAction: TextInputAction.next,
-                  inputFormatters: [DigitsInputFormatter()],
-                  onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                  labelText: '年份',
+                  hintText: '2024',
+                  type: AppTextFieldType.number,
                   onChanged: (_) => _onFieldChanged(),
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: TextFormField(
+                child: AppTextField(
                   controller: _releaseDateController,
-                  decoration: const InputDecoration(
-                    labelText: '发行日期',
-                    hintText: '2024-12-26',
-                    border: OutlineInputBorder(),
-                  ),
-                  textInputAction: TextInputAction.next,
-                  onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                  labelText: '发行日期',
+                  hintText: '2024-12-26',
                   onChanged: (_) => _onFieldChanged(),
                 ),
               ),
@@ -504,15 +477,10 @@ class _MediaEditScreenState extends ConsumerState<MediaEditScreen> {
           ),
           const SizedBox(height: 16),
 
-          TextFormField(
+          AppTextField(
             controller: _genresController,
-            decoration: const InputDecoration(
-              labelText: '分类',
-              hintText: '动作, 科幻, 冒险（逗号分隔）',
-              border: OutlineInputBorder(),
-            ),
-            textInputAction: TextInputAction.next,
-            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+            labelText: '分类',
+            hintText: '动作, 科幻, 冒险（逗号分隔）',
             onChanged: (_) => _onFieldChanged(),
           ),
           const SizedBox(height: 16),
@@ -520,35 +488,21 @@ class _MediaEditScreenState extends ConsumerState<MediaEditScreen> {
           Row(
             children: [
               Expanded(
-                child: TextFormField(
+                child: AppTextField(
                   controller: _ratingController,
-                  decoration: const InputDecoration(
-                    labelText: '评分',
-                    hintText: '0-10',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  textInputAction: TextInputAction.next,
-                  inputFormatters: [
-                    DecimalInputFormatter(decimalPlaces: 1),  // 最多1位小数
-                  ],
-                  onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                  labelText: '评分',
+                  hintText: '0-10',
+                  type: AppTextFieldType.decimal,
                   onChanged: (_) => _onFieldChanged(),
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: TextFormField(
+                child: AppTextField(
                   controller: _runtimeController,
-                  decoration: const InputDecoration(
-                    labelText: '时长（分钟）',
-                    hintText: '120',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.number,
-                  textInputAction: TextInputAction.next,
-                  inputFormatters: [DigitsInputFormatter()],
-                  onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                  labelText: '时长（分钟）',
+                  hintText: '120',
+                  type: AppTextFieldType.number,
                   onChanged: (_) => _onFieldChanged(),
                 ),
               ),
@@ -560,17 +514,12 @@ class _MediaEditScreenState extends ConsumerState<MediaEditScreen> {
           _buildSectionTitle('简介'),
           const SizedBox(height: 12),
           
-          TextFormField(
+          AppTextField(
             controller: _overviewController,
-            decoration: const InputDecoration(
-              labelText: '简介',
-              hintText: '输入媒体简介...',
-              border: OutlineInputBorder(),
-              alignLabelWithHint: true,
-            ),
+            labelText: '简介',
+            hintText: '输入媒体简介...',
+            type: AppTextFieldType.multiline,
             maxLines: 5,
-            keyboardType: TextInputType.multiline,
-            textInputAction: TextInputAction.newline,
             onChanged: (_) => _onFieldChanged(),
           ),
           const SizedBox(height: 24),
@@ -579,83 +528,53 @@ class _MediaEditScreenState extends ConsumerState<MediaEditScreen> {
           _buildSectionTitle('图片'),
           const SizedBox(height: 12),
           
-          TextFormField(
+          AppTextField(
             controller: _posterUrlController,
-            decoration: const InputDecoration(
-              labelText: '封面图 URL（竖向 2:3）',
-              hintText: '推荐尺寸：500x750px',
-              helperText: '用于列表/网格视图显示',
-              border: OutlineInputBorder(),
-            ),
-            keyboardType: TextInputType.url,
-            textInputAction: TextInputAction.next,
-            autocorrect: false,
-            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+            labelText: '封面图 URL（竖向 2:3）',
+            hintText: '推荐尺寸：500x750px',
+            helperText: '用于列表/网格视图显示',
+            type: AppTextFieldType.url,
             onChanged: (_) => _onFieldChanged(),
           ),
           const SizedBox(height: 16),
 
-          TextFormField(
+          AppTextField(
             controller: _backdropUrlController,
-            decoration: const InputDecoration(
-              labelText: '背景图 URL（横向 16:9）',
-              hintText: '推荐尺寸：1280x720px',
-              helperText: '用于详情页背景显示',
-              border: OutlineInputBorder(),
-            ),
-            keyboardType: TextInputType.url,
-            textInputAction: TextInputAction.next,
-            autocorrect: false,
-            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+            labelText: '背景图 URL（横向 16:9）',
+            hintText: '推荐尺寸：1280x720px',
+            helperText: '用于详情页背景显示',
+            type: AppTextFieldType.url,
             onChanged: (_) => _onFieldChanged(),
           ),
           const SizedBox(height: 16),
 
-          TextFormField(
+          AppTextField(
             controller: _previewUrlsController,
-            decoration: const InputDecoration(
-              labelText: '预览图 URL',
-              hintText: '每行一个 URL\nhttps://...\nhttps://...',
-              border: OutlineInputBorder(),
-              alignLabelWithHint: true,
-            ),
+            labelText: '预览图 URL',
+            hintText: '每行一个 URL\nhttps://...\nhttps://...',
+            type: AppTextFieldType.multiline,
             maxLines: 5,
-            keyboardType: TextInputType.multiline,
-            textInputAction: TextInputAction.newline,
-            autocorrect: false,
             onChanged: (_) => _onFieldChanged(),
           ),
           const SizedBox(height: 16),
 
-          TextFormField(
+          AppTextField(
             controller: _previewVideoUrlsController,
-            decoration: const InputDecoration(
-              labelText: '预览视频 URL',
-              hintText: '每行一个 URL\nhttps://...\nhttps://...',
-              helperText: '用于详情页预览播放',
-              border: OutlineInputBorder(),
-              alignLabelWithHint: true,
-            ),
+            labelText: '预览视频 URL',
+            hintText: '每行一个 URL\nhttps://...\nhttps://...',
+            helperText: '用于详情页预览播放',
+            type: AppTextFieldType.multiline,
             maxLines: 3,
-            keyboardType: TextInputType.multiline,
-            textInputAction: TextInputAction.newline,
-            autocorrect: false,
             onChanged: (_) => _onFieldChanged(),
           ),
           const SizedBox(height: 16),
 
-          TextFormField(
+          AppTextField(
             controller: _coverVideoUrlController,
-            decoration: const InputDecoration(
-              labelText: '封面视频 URL',
-              hintText: 'https://...',
-              helperText: '用于卡片悬停播放（短视频缩略图）',
-              border: OutlineInputBorder(),
-            ),
-            keyboardType: TextInputType.url,
-            textInputAction: TextInputAction.next,
-            autocorrect: false,
-            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+            labelText: '封面视频 URL',
+            hintText: 'https://...',
+            helperText: '用于卡片悬停播放（短视频缩略图）',
+            type: AppTextFieldType.url,
             onChanged: (_) => _onFieldChanged(),
           ),
           const SizedBox(height: 24),
