@@ -48,7 +48,7 @@ dependencies:
   json_annotation: ^4.8.1
   
   # File Picker
-  file_picker: ^6.1.1
+  file_picker: ^8.0.0
   
   # CSV Parser
   csv: ^5.1.1
@@ -60,6 +60,7 @@ dependencies:
   media_kit: ^1.1.10
   media_kit_video: ^1.2.4
   media_kit_libs_windows_video: ^1.0.9
+  media_kit_libs_android_video: ^1.3.6
   
   # Path Provider (for file operations on mobile)
   path_provider: ^2.1.1

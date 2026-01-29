@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -15,6 +14,7 @@ import '../../../../core/utils/loading_state.dart';
 import '../../../../core/providers/app_providers.dart';
 import '../../../../core/plugins/ui_registry.dart';
 import '../../../../core/plugins/ui_renderer.dart';
+import '../../../../shared/widgets/app_text_field.dart';
 import '../../providers/actor_providers.dart';
 import '../../../../shared/widgets/expandable_text.dart';
 import '../../../../shared/widgets/media_card.dart';
@@ -618,96 +618,58 @@ class _EditActorDialogState extends ConsumerState<EditActorDialog> with LoadingS
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextFormField(
+                AppTextField(
                   controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: '姓名 *',
-                  ),
-                  textInputAction: TextInputAction.next,
-                  onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return '请输入姓名';
-                    }
-                    return null;
-                  },
+                  labelText: '姓名 *',
+                  required: true,
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
+                AppTextField(
                   controller: _avatarUrlController,
-                  decoration: const InputDecoration(
-                    labelText: '头像URL',
-                    hintText: '圆形小头像（用于媒体详情页）',
-                  ),
-                  keyboardType: TextInputType.url,
-                  textInputAction: TextInputAction.next,
-                  autocorrect: false,
-                  onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                  labelText: '头像URL',
+                  hintText: '圆形小头像（用于媒体详情页）',
+                  type: AppTextFieldType.url,
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
+                AppTextField(
                   controller: _photoUrlsController,
-                  decoration: const InputDecoration(
-                    labelText: '写真URLs',
-                    hintText: '多个URL用换行分隔',
-                  ),
+                  labelText: '写真URLs',
+                  hintText: '多个URL用换行分隔',
+                  type: AppTextFieldType.multiline,
                   maxLines: 3,
-                  keyboardType: TextInputType.multiline,
-                  textInputAction: TextInputAction.newline,
-                  autocorrect: false,
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
+                AppTextField(
                   controller: _posterUrlController,
-                  decoration: const InputDecoration(
-                    labelText: '封面URL',
-                    hintText: '竖版海报（用于演员列表卡片）',
-                  ),
-                  keyboardType: TextInputType.url,
-                  textInputAction: TextInputAction.next,
-                  autocorrect: false,
-                  onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                  labelText: '封面URL',
+                  hintText: '竖版海报（用于演员列表卡片）',
+                  type: AppTextFieldType.url,
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
+                AppTextField(
                   controller: _backdropUrlController,
-                  decoration: const InputDecoration(
-                    labelText: '背景图URL',
-                    hintText: '横版大图（用于详情页背景）',
-                  ),
-                  keyboardType: TextInputType.url,
-                  textInputAction: TextInputAction.next,
-                  autocorrect: false,
-                  onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                  labelText: '背景图URL',
+                  hintText: '横版大图（用于详情页背景）',
+                  type: AppTextFieldType.url,
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
+                AppTextField(
                   controller: _nationalityController,
-                  decoration: const InputDecoration(
-                    labelText: '国籍',
-                  ),
-                  textInputAction: TextInputAction.next,
-                  onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                  labelText: '国籍',
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
+                AppTextField(
                   controller: _birthDateController,
-                  decoration: const InputDecoration(
-                    labelText: '出生日期',
-                    hintText: 'YYYY-MM-DD',
-                  ),
-                  textInputAction: TextInputAction.next,
-                  onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                  labelText: '出生日期',
+                  hintText: 'YYYY-MM-DD',
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
+                AppTextField(
                   controller: _biographyController,
-                  decoration: const InputDecoration(
-                    labelText: '简介',
-                  ),
+                  labelText: '简介',
+                  type: AppTextFieldType.multiline,
                   maxLines: 3,
-                  keyboardType: TextInputType.multiline,
-                  textInputAction: TextInputAction.newline,
+                  isLastField: true,
                 ),
               ],
             ),

@@ -10,6 +10,7 @@ import '../../../../core/models/media_item.dart';
 import '../../../../core/services/api_service.dart';
 import '../../../../core/services/backend_mode.dart';
 import '../../../../core/providers/app_providers.dart';
+import '../../../../core/config/app_config.dart';
 import '../../../../core/utils/image_proxy.dart';
 import '../../../../core/utils/snackbar_utils.dart';
 import '../../../../core/plugins/ui_registry.dart';
@@ -475,6 +476,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('backend_mode', 'pc');
           
+          // 获取 PC 后端 URL 并更新 apiBaseUrlProvider
+          final pcBackendUrl = prefs.getString('pc_backend_url') ?? 'http://localhost:3000';
+          ref.read(apiBaseUrlProvider.notifier).state = pcBackendUrl;
+          print('✓ 切换到 PC 模式，API URL 更新为: $pcBackendUrl');
+          
           modeManager.setMode(BackendMode.pc);
           if (mounted) {
             context.showSuccess('已切换到PC模式\n数据将在后台加载');
@@ -484,7 +490,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 // 清除图片比例缓存
                 _cachedIsLandscape = null;
                 _lastDetectedItems = null;
+                // 刷新媒体列表和插件列表
                 ref.invalidate(mediaListProvider);
+                ref.invalidate(pluginsProvider);
               }
             });
           }
@@ -505,6 +513,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('backend_mode', 'standalone');
         
+        // 切换到独立模式时，使用本地服务器地址
+        ref.read(apiBaseUrlProvider.notifier).state = 'http://localhost:8080';
+        print('✓ 切换到独立模式，API URL 更新为: http://localhost:8080');
+        
         // 切换到独立模式
         modeManager.setMode(BackendMode.standalone);
         if (mounted) {
@@ -515,7 +527,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               // 清除图片比例缓存
               _cachedIsLandscape = null;
               _lastDetectedItems = null;
+              // 刷新媒体列表和插件列表
               ref.invalidate(mediaListProvider);
+              ref.invalidate(pluginsProvider);
             }
           });
         }

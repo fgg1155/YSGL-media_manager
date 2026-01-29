@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:go_router/go_router.dart';
@@ -2067,6 +2066,7 @@ class _SmartDialogState extends State<_SmartDialog> {
 
     switch (field.type) {
       case 'text':
+        // 使用 TextFormField 而不是 AppTextField，因为需要 onSaved 回调
         return TextFormField(
           decoration: InputDecoration(
             labelText: label,
@@ -2074,7 +2074,9 @@ class _SmartDialogState extends State<_SmartDialog> {
             border: const OutlineInputBorder(),
           ),
           initialValue: widget.formData[field.id]?.toString() ?? '',
+          keyboardType: TextInputType.text,
           textInputAction: TextInputAction.next,
+          autocorrect: true,
           onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
           validator: field.required
               ? (value) {
@@ -2090,6 +2092,7 @@ class _SmartDialogState extends State<_SmartDialog> {
         );
 
       case 'number':
+        // 使用 TextFormField 而不是 AppTextField，因为需要 onSaved 回调
         return TextFormField(
           decoration: InputDecoration(
             labelText: label,
@@ -2191,7 +2194,7 @@ class _SmartDialogState extends State<_SmartDialog> {
 }
 
 /// 通用进度对话框基类
-abstract class _BaseProgressDialog extends StatefulWidget {
+abstract class _BaseProgressDialog extends ConsumerStatefulWidget {
   final String sessionId;
   final String progressMessage;
   final String locale;
@@ -2205,13 +2208,12 @@ abstract class _BaseProgressDialog extends StatefulWidget {
   });
 }
 
-abstract class _BaseProgressDialogState<T extends _BaseProgressDialog> extends State<T> {
+abstract class _BaseProgressDialogState<T extends _BaseProgressDialog> extends ConsumerState<T> {
   Timer? _timer;
   int _progress = 0;
   int _total = 0;
   String _currentItem = '';
   bool _isCompleted = false;
-  ProviderContainer? _container;
 
   // 子类需要实现的抽象方法
   String get progressEndpoint;
@@ -2234,7 +2236,6 @@ abstract class _BaseProgressDialogState<T extends _BaseProgressDialog> extends S
   @override
   void dispose() {
     _timer?.cancel();
-    _container?.dispose();
     super.dispose();
   }
 
@@ -2248,8 +2249,7 @@ abstract class _BaseProgressDialogState<T extends _BaseProgressDialog> extends S
       }
       
       try {
-        _container ??= ProviderContainer();
-        final baseUrl = _container!.read(apiBaseUrlProvider);
+        final baseUrl = ref.read(apiBaseUrlProvider);
         final fullApiUrl = getFullApiUrl(baseUrl);
 
         final dio = Dio(BaseOptions(
@@ -2426,7 +2426,7 @@ class _AutoScrapeProgressDialog extends _BaseProgressDialog {
   });
 
   @override
-  State<_AutoScrapeProgressDialog> createState() =>
+  ConsumerState<_AutoScrapeProgressDialog> createState() =>
       _AutoScrapeProgressDialogState();
 }
 
@@ -2477,7 +2477,7 @@ class _MagnetSearchProgressDialog extends _BaseProgressDialog {
   });
 
   @override
-  State<_MagnetSearchProgressDialog> createState() =>
+  ConsumerState<_MagnetSearchProgressDialog> createState() =>
       _MagnetSearchProgressDialogState();
 }
 

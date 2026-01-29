@@ -249,7 +249,7 @@ class _EnhancedBatchScrapeDialogState extends State<_EnhancedBatchScrapeDialog> 
     if (_isLoading) {
       return Dialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
         ),
         child: Container(
           padding: const EdgeInsets.all(40),
@@ -262,196 +262,225 @@ class _EnhancedBatchScrapeDialogState extends State<_EnhancedBatchScrapeDialog> 
 
     return Dialog(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
       ),
       elevation: 8,
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 500),
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 标题和关闭按钮
-            Row(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // 响应式：根据屏幕宽度调整对话框宽度
+          final maxWidth = constraints.maxWidth > 600 ? 480.0 : constraints.maxWidth * 0.9;
+          final isCompact = constraints.maxWidth < 400;
+          
+          return Container(
+            constraints: BoxConstraints(maxWidth: maxWidth),
+            padding: EdgeInsets.all(isCompact ? 16 : 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  Icons.cloud_download,
-                  color: colorScheme.primary,
-                  size: 24,
+                // 标题和关闭按钮 - 紧凑版
+                Row(
+                  children: [
+                    Icon(
+                      Icons.cloud_download,
+                      color: colorScheme.primary,
+                      size: isCompact ? 20 : 24,
+                    ),
+                    SizedBox(width: isCompact ? 8 : 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.title,
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              fontSize: isCompact ? 18 : null,
+                            ),
+                          ),
+                          Text(
+                            '${widget.itemCount} 个${widget.itemType == 'media' ? '媒体' : '演员'} · 预计 ${_formatTime(estimatedTime)}',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                              fontSize: isCompact ? 11 : null,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 20),
+                      onPressed: widget.onCancel,
+                      tooltip: '取消',
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                SizedBox(height: isCompact ? 12 : 16),
+
+                // 刮削方式选择（仅媒体类型显示，且 showScrapeModeSelector 为 true）
+                if (widget.itemType == 'media' && widget.showScrapeModeSelector) ...[
+                  Text(
+                    '刮削方式',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      fontSize: isCompact ? 13 : null,
+                    ),
+                  ),
+                  SizedBox(height: isCompact ? 6 : 8),
+                  
+                  // 刮削方式卡片 - 紧凑版
+                  _CompactScrapeModeSelector(
+                    selectedMode: _scrapeMode,
+                    onModeChanged: (newMode) {
+                      setState(() {
+                        _scrapeMode = newMode;
+                      });
+                    },
+                    isCompact: isCompact,
+                  ),
+                  
+                  SizedBox(height: isCompact ? 12 : 16),
+                ],
+
+                // 内容类型选择 (仅媒体刮削显示)
+                if (widget.itemType == 'media') ...[
+                  Text(
+                    '内容类型',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      fontSize: isCompact ? 13 : null,
+                    ),
+                  ),
+                  SizedBox(height: isCompact ? 6 : 8),
+                  
+                  Row(
                     children: [
-                      Text(
-                        widget.title,
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
+                      Expanded(
+                        child: _ContentTypeCard(
+                          type: 'Scene',
+                          icon: Icons.movie_outlined,
+                          isSelected: _contentType == 'Scene',
+                          isCompact: isCompact,
+                          onTap: () {
+                            setState(() => _contentType = 'Scene');
+                            ScrapePreferences.saveContentType('Scene');
+                          },
                         ),
                       ),
-                      Text(
-                        '${widget.itemCount} 个${widget.itemType == 'media' ? '媒体' : '演员'} · 预计 ${_formatTime(estimatedTime)}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
+                      SizedBox(width: isCompact ? 6 : 8),
+                      Expanded(
+                        child: _ContentTypeCard(
+                          type: 'Movie',
+                          icon: Icons.video_library_outlined,
+                          isSelected: _contentType == 'Movie',
+                          isCompact: isCompact,
+                          onTap: () {
+                            setState(() => _contentType = 'Movie');
+                            ScrapePreferences.saveContentType('Movie');
+                          },
                         ),
                       ),
                     ],
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close, size: 20),
-                  onPressed: widget.onCancel,
-                  tooltip: '取消',
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // 刮削方式选择（仅媒体类型显示，且 showScrapeModeSelector 为 true）
-            if (widget.itemType == 'media' && widget.showScrapeModeSelector) ...[
-              Text(
-                '刮削方式',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              
-              // 刮削方式卡片 - 紧凑版
-              _CompactScrapeModeSelector(
-                selectedMode: _scrapeMode,
-                onModeChanged: (newMode) {
-                  setState(() {
-                    _scrapeMode = newMode;
-                  });
-                },
-              ),
-              
-              const SizedBox(height: 16),
-            ],
-
-            // 内容类型选择 (仅媒体刮削显示)
-            if (widget.itemType == 'media') ...[
-              Text(
-                '内容类型',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              
-              Row(
-                children: [
-                  Expanded(
-                    child: _ContentTypeCard(
-                      type: 'Scene',
-                      icon: Icons.movie_outlined,
-                      isSelected: _contentType == 'Scene',
-                      onTap: () {
-                        setState(() => _contentType = 'Scene');
-                        ScrapePreferences.saveContentType('Scene');
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _ContentTypeCard(
-                      type: 'Movie',
-                      icon: Icons.video_library_outlined,
-                      isSelected: _contentType == 'Movie',
-                      onTap: () {
-                        setState(() => _contentType = 'Movie');
-                        ScrapePreferences.saveContentType('Movie');
-                      },
-                    ),
-                  ),
+                  
+                  SizedBox(height: isCompact ? 12 : 16),
                 ],
-              ),
-              
-              const SizedBox(height: 16),
-            ],
 
-            // 处理模式选择
-            Text(
-              '处理模式',
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                // 串行模式
-                Expanded(
-                  child: _CompactModeCard(
-                    icon: Icons.list_rounded,
-                    title: '串行',
-                    time: _formatTime(widget.itemCount * 3),
-                    color: Colors.blue,
-                    isSelected: !_concurrent,
-                    onTap: () {
-                      setState(() {
-                        _concurrent = false;
-                      });
-                    },
+                // 处理模式选择
+                Text(
+                  '处理模式',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    fontSize: isCompact ? 13 : null,
                   ),
                 ),
-                const SizedBox(width: 12),
-                // 并发模式
-                Expanded(
-                  child: _CompactModeCard(
-                    icon: Icons.flash_on_rounded,
-                    title: '并发',
-                    time: _formatTime(_estimateTime()),
-                    color: Colors.green,
-                    isSelected: _concurrent,
-                    recommended: widget.itemCount > 5,
-                    onTap: () {
-                      setState(() {
-                        _concurrent = true;
-                      });
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // 底部按钮
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: widget.onCancel,
-                  child: const Text('取消'),
-                ),
-                const SizedBox(width: 8),
-                FilledButton.icon(
-                  onPressed: () {
-                    // 如果是媒体刮削，必须选择 content_type
-                    if (widget.itemType == 'media' && _contentType == null) {
-                      context.showWarning('请选择内容类型（Scene 或 Movie）');
-                      return;
-                    }
-                    widget.onConfirm(_concurrent, _scrapeMode, _contentType ?? 'Scene');
-                  },
-                  icon: const Icon(Icons.download, size: 18),
-                  label: const Text('开始'),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
+                SizedBox(height: isCompact ? 6 : 8),
+                Row(
+                  children: [
+                    // 串行模式
+                    Expanded(
+                      child: _CompactModeCard(
+                        icon: Icons.list_rounded,
+                        title: '串行',
+                        time: _formatTime(widget.itemCount * 3),
+                        color: Colors.blue,
+                        isSelected: !_concurrent,
+                        onTap: () {
+                          setState(() {
+                            _concurrent = false;
+                          });
+                        },
+                      ),
                     ),
-                  ),
+                    SizedBox(width: isCompact ? 8 : 12),
+                    // 并发模式
+                    Expanded(
+                      child: _CompactModeCard(
+                        icon: Icons.flash_on_rounded,
+                        title: '并发',
+                        time: _formatTime(_estimateTime()),
+                        color: Colors.green,
+                        isSelected: _concurrent,
+                        recommended: widget.itemCount > 5,
+                        onTap: () {
+                          setState(() {
+                            _concurrent = true;
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: isCompact ? 12 : 16),
+
+                // 底部按钮
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: widget.onCancel,
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isCompact ? 12 : 16,
+                          vertical: isCompact ? 8 : 10,
+                        ),
+                      ),
+                      child: Text(
+                        '取消',
+                        style: TextStyle(fontSize: isCompact ? 13 : null),
+                      ),
+                    ),
+                    SizedBox(width: isCompact ? 6 : 8),
+                    FilledButton.icon(
+                      onPressed: () {
+                        // 如果是媒体刮削，必须选择 content_type
+                        if (widget.itemType == 'media' && _contentType == null) {
+                          context.showWarning('请选择内容类型（Scene 或 Movie）');
+                          return;
+                        }
+                        widget.onConfirm(_concurrent, _scrapeMode, _contentType ?? 'Scene');
+                      },
+                      icon: Icon(Icons.download, size: isCompact ? 16 : 18),
+                      label: Text(
+                        '开始',
+                        style: TextStyle(fontSize: isCompact ? 13 : null),
+                      ),
+                      style: FilledButton.styleFrom(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isCompact ? 12 : 16,
+                          vertical: isCompact ? 8 : 10,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -764,161 +793,185 @@ class _EnhancedSingleScrapeDialogState extends State<_EnhancedSingleScrapeDialog
 
     return Dialog(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
       ),
       elevation: 8,
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 500),
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 标题和关闭按钮
-            Row(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // 响应式：根据屏幕宽度调整对话框宽度
+          final maxWidth = constraints.maxWidth > 600 ? 480.0 : constraints.maxWidth * 0.9;
+          final isCompact = constraints.maxWidth < 400;
+          
+          return Container(
+            constraints: BoxConstraints(maxWidth: maxWidth),
+            padding: EdgeInsets.all(isCompact ? 16 : 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  Icons.cloud_download,
-                  color: colorScheme.primary,
-                  size: 24,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    widget.title,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
+                // 标题和关闭按钮 - 紧凑版
+                Row(
+                  children: [
+                    Icon(
+                      Icons.cloud_download,
+                      color: colorScheme.primary,
+                      size: isCompact ? 20 : 24,
                     ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close, size: 20),
-                  onPressed: widget.onCancel,
-                  tooltip: '取消',
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // 刮削方式选择 - 紧凑版
-            Text(
-              '刮削方式',
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            
-            // 刮削方式卡片 - 紧凑版
-            _CompactScrapeModeSelector(
-              selectedMode: _scrapeMode,
-              onModeChanged: _onScrapeModeChanged,
-            ),
-            
-            const SizedBox(height: 16),
-
-            // 内容类型选择（ThePornDB）
-            Text(
-              '内容类型',
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            
-            Row(
-              children: [
-                Expanded(
-                  child: _ContentTypeCard(
-                    type: 'Scene',
-                    icon: Icons.movie_outlined,
-                    isSelected: _contentType == 'Scene',
-                    onTap: () {
-                      setState(() => _contentType = 'Scene');
-                      ScrapePreferences.saveContentType('Scene');
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _ContentTypeCard(
-                    type: 'Movie',
-                    icon: Icons.video_library_outlined,
-                    isSelected: _contentType == 'Movie',
-                    onTap: () {
-                      setState(() => _contentType = 'Movie');
-                      ScrapePreferences.saveContentType('Movie');
-                    },
-                  ),
-                ),
-              ],
-            ),
-            
-            const SizedBox(height: 16),
-
-            // 搜索关键词输入
-            Text(
-              '搜索关键词',
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            
-            TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: '输入识别号或标题',
-                prefixIcon: const Icon(Icons.search, size: 20),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
-                contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-                isDense: true,
-              ),
-            ),
-            
-            const SizedBox(height: 16),
-
-            // 底部按钮
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: widget.onCancel,
-                  child: const Text('取消'),
-                ),
-                const SizedBox(width: 8),
-                FilledButton.icon(
-                  onPressed: () {
-                    final query = _searchController.text.trim();
-                    if (query.isEmpty) {
-                      context.showWarning('请输入搜索关键词');
-                      return;
-                    }
-                    if (_contentType == null) {
-                      context.showWarning('请选择内容类型（Scene 或 Movie）');
-                      return;
-                    }
-                    widget.onConfirm(_scrapeMode, query, _contentType!);
-                  },
-                  icon: const Icon(Icons.download, size: 18),
-                  label: const Text('开始'),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
+                    SizedBox(width: isCompact ? 8 : 10),
+                    Expanded(
+                      child: Text(
+                        widget.title,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          fontSize: isCompact ? 18 : null,
+                        ),
+                      ),
                     ),
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 20),
+                      onPressed: widget.onCancel,
+                      tooltip: '取消',
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ],
+                ),
+                SizedBox(height: isCompact ? 12 : 16),
+
+                // 刮削方式选择 - 紧凑版
+                Text(
+                  '刮削方式',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    fontSize: isCompact ? 13 : null,
                   ),
+                ),
+                SizedBox(height: isCompact ? 6 : 8),
+                
+                // 刮削方式卡片 - 紧凑版
+                _CompactScrapeModeSelector(
+                  selectedMode: _scrapeMode,
+                  onModeChanged: _onScrapeModeChanged,
+                  isCompact: isCompact,
+                ),
+                
+                SizedBox(height: isCompact ? 12 : 16),
+
+                // 内容类型选择（ThePornDB）
+                Text(
+                  '内容类型',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    fontSize: isCompact ? 13 : null,
+                  ),
+                ),
+                SizedBox(height: isCompact ? 6 : 8),
+                
+                Row(
+                  children: [
+                    Expanded(
+                      child: _ContentTypeCard(
+                        type: 'Scene',
+                        icon: Icons.movie_outlined,
+                        isSelected: _contentType == 'Scene',
+                        isCompact: isCompact,
+                        onTap: () {
+                          setState(() => _contentType = 'Scene');
+                          ScrapePreferences.saveContentType('Scene');
+                        },
+                      ),
+                    ),
+                    SizedBox(width: isCompact ? 6 : 8),
+                    Expanded(
+                      child: _ContentTypeCard(
+                        type: 'Movie',
+                        icon: Icons.video_library_outlined,
+                        isSelected: _contentType == 'Movie',
+                        isCompact: isCompact,
+                        onTap: () {
+                          setState(() => _contentType = 'Movie');
+                          ScrapePreferences.saveContentType('Movie');
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                
+                SizedBox(height: isCompact ? 12 : 16),
+
+                // 搜索关键词输入
+                TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    labelText: '搜索关键词',
+                    labelStyle: TextStyle(fontSize: isCompact ? 13 : null),
+                    hintText: '输入识别号或标题',
+                    hintStyle: TextStyle(fontSize: isCompact ? 13 : null),
+                    prefixIcon: Icon(Icons.search, size: isCompact ? 18 : 20),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                      vertical: isCompact ? 10 : 12,
+                      horizontal: isCompact ? 10 : 12,
+                    ),
+                    isDense: true,
+                  ),
+                  style: TextStyle(fontSize: isCompact ? 14 : null),
+                ),
+                
+                SizedBox(height: isCompact ? 12 : 16),
+
+                // 底部按钮
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: widget.onCancel,
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isCompact ? 12 : 16,
+                          vertical: isCompact ? 8 : 10,
+                        ),
+                      ),
+                      child: Text(
+                        '取消',
+                        style: TextStyle(fontSize: isCompact ? 13 : null),
+                      ),
+                    ),
+                    SizedBox(width: isCompact ? 6 : 8),
+                    FilledButton.icon(
+                      onPressed: () {
+                        final query = _searchController.text.trim();
+                        if (query.isEmpty) {
+                          context.showWarning('请输入搜索关键词');
+                          return;
+                        }
+                        if (_contentType == null) {
+                          context.showWarning('请选择内容类型（Scene 或 Movie）');
+                          return;
+                        }
+                        widget.onConfirm(_scrapeMode, query, _contentType!);
+                      },
+                      icon: Icon(Icons.download, size: isCompact ? 16 : 18),
+                      label: Text(
+                        '开始',
+                        style: TextStyle(fontSize: isCompact ? 13 : null),
+                      ),
+                      style: FilledButton.styleFrom(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isCompact ? 12 : 16,
+                          vertical: isCompact ? 8 : 10,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -1078,14 +1131,18 @@ class _ScrapeModeSelector extends StatelessWidget {
 class _CompactScrapeModeSelector extends StatelessWidget {
   final String selectedMode;
   final Function(String) onModeChanged;
+  final bool isCompact;
 
   const _CompactScrapeModeSelector({
     required this.selectedMode,
     required this.onModeChanged,
+    this.isCompact = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final spacing = isCompact ? 4.0 : 6.0;
+    
     return Column(
       children: [
         _CompactModeOptionCard(
@@ -1096,8 +1153,9 @@ class _CompactScrapeModeSelector extends StatelessWidget {
           subtitle: '识别号精确匹配',
           color: Colors.blue,
           onModeChanged: onModeChanged,
+          isCompact: isCompact,
         ),
-        const SizedBox(height: 6),
+        SizedBox(height: spacing),
         _CompactModeOptionCard(
           mode: 'studio_code',
           selectedMode: selectedMode,
@@ -1106,8 +1164,9 @@ class _CompactScrapeModeSelector extends StatelessWidget {
           subtitle: '片商名称+识别号',
           color: Colors.teal,
           onModeChanged: onModeChanged,
+          isCompact: isCompact,
         ),
-        const SizedBox(height: 6),
+        SizedBox(height: spacing),
         _CompactModeOptionCard(
           mode: 'title',
           selectedMode: selectedMode,
@@ -1116,8 +1175,9 @@ class _CompactScrapeModeSelector extends StatelessWidget {
           subtitle: '标题模糊搜索',
           color: Colors.green,
           onModeChanged: onModeChanged,
+          isCompact: isCompact,
         ),
-        const SizedBox(height: 6),
+        SizedBox(height: spacing),
         _CompactModeOptionCard(
           mode: 'series_title',
           selectedMode: selectedMode,
@@ -1126,8 +1186,9 @@ class _CompactScrapeModeSelector extends StatelessWidget {
           subtitle: '系列名称+标题组合搜索',
           color: Colors.purple,
           onModeChanged: onModeChanged,
+          isCompact: isCompact,
         ),
-        const SizedBox(height: 6),
+        SizedBox(height: spacing),
         _CompactModeOptionCard(
           mode: 'series_date',
           selectedMode: selectedMode,
@@ -1136,6 +1197,7 @@ class _CompactScrapeModeSelector extends StatelessWidget {
           subtitle: '系列名称+发布日期',
           color: Colors.orange,
           onModeChanged: onModeChanged,
+          isCompact: isCompact,
         ),
       ],
     );
@@ -1151,6 +1213,7 @@ class _CompactModeOptionCard extends StatelessWidget {
   final String subtitle;
   final Color color;
   final Function(String) onModeChanged;
+  final bool isCompact;
 
   const _CompactModeOptionCard({
     required this.mode,
@@ -1160,6 +1223,7 @@ class _CompactModeOptionCard extends StatelessWidget {
     required this.subtitle,
     required this.color,
     required this.onModeChanged,
+    this.isCompact = false,
   });
 
   @override
@@ -1172,11 +1236,14 @@ class _CompactModeOptionCard extends StatelessWidget {
       onTap: () => onModeChanged(mode),
       borderRadius: BorderRadius.circular(10),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: EdgeInsets.symmetric(
+          horizontal: isCompact ? 10 : 12,
+          vertical: isCompact ? 8 : 10,
+        ),
         decoration: BoxDecoration(
           color: isSelected
-              ? color.withOpacity(0.1)
-              : colorScheme.surfaceVariant.withOpacity(0.3),
+              ? color.withOpacity(0.12)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isSelected
@@ -1188,34 +1255,36 @@ class _CompactModeOptionCard extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(6),
+              padding: EdgeInsets.all(isCompact ? 6 : 8),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(6),
+                color: color.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
                 icon,
                 color: color,
-                size: 18,
+                size: isCompact ? 18 : 20,
               ),
             ),
-            const SizedBox(width: 10),
+            SizedBox(width: isCompact ? 10 : 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-                    style: theme.textTheme.bodyMedium?.copyWith(
+                    style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: isSelected ? color : null,
+                      fontSize: isCompact ? 13 : 14,
                     ),
                   ),
+                  SizedBox(height: isCompact ? 1 : 2),
                   Text(
                     subtitle,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,
-                      fontSize: 11,
+                      fontSize: isCompact ? 11 : 12,
                     ),
                   ),
                 ],
@@ -1225,7 +1294,7 @@ class _CompactModeOptionCard extends StatelessWidget {
               Icon(
                 Icons.check_circle,
                 color: color,
-                size: 20,
+                size: isCompact ? 18 : 20,
               ),
           ],
         ),
@@ -1233,7 +1302,6 @@ class _CompactModeOptionCard extends StatelessWidget {
     );
   }
 }
-
 
 /// 增强版磁力刮削对话框
 class _EnhancedMagnetScrapeDialog extends StatefulWidget {
@@ -1328,151 +1396,186 @@ class _EnhancedMagnetScrapeDialogState extends State<_EnhancedMagnetScrapeDialog
 
     return Dialog(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
       ),
       elevation: 8,
-      child: Container(
-        width: 500,
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 标题和关闭按钮
-            Row(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // 响应式：根据屏幕宽度调整对话框宽度
+          final maxWidth = constraints.maxWidth > 600 ? 480.0 : constraints.maxWidth * 0.9;
+          final isCompact = constraints.maxWidth < 400;
+          
+          return Container(
+            constraints: BoxConstraints(maxWidth: maxWidth),
+            padding: EdgeInsets.all(isCompact ? 16 : 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  Icons.link,
-                  color: colorScheme.primary,
-                  size: 28,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    widget.title,
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
+                // 标题和关闭按钮 - 紧凑版
+                Row(
+                  children: [
+                    Icon(
+                      Icons.link,
+                      color: colorScheme.primary,
+                      size: isCompact ? 20 : 24,
                     ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: widget.onCancel,
-                  tooltip: '取消',
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            // 信息提示卡片
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: colorScheme.primary.withOpacity(0.3),
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    color: colorScheme.primary,
-                    size: 24,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      '将从多个磁力网站搜索资源',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
+                    SizedBox(width: isCompact ? 8 : 10),
+                    Expanded(
+                      child: Text(
+                        widget.title,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          fontSize: isCompact ? 18 : null,
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // 搜索模式选择
-            Text(
-              '选择搜索方式',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 12),
-            
-            _MagnetSearchModeSelector(
-              selectedMode: _searchMode,
-              onModeChanged: _onSearchModeChanged,
-            ),
-            
-            const SizedBox(height: 24),
-
-            // 搜索关键词输入
-            Text(
-              '搜索关键词',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 12),
-            
-            TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: '输入识别号或标题',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 20),
+                      onPressed: widget.onCancel,
+                      tooltip: '取消',
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ],
                 ),
-                filled: true,
-                fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
-              ),
-              onSubmitted: (_) {
-                final query = _searchController.text.trim();
-                if (query.isNotEmpty) {
-                  widget.onConfirm(query);
-                }
-              },
-            ),
-            
-            const SizedBox(height: 24),
+                SizedBox(height: isCompact ? 12 : 16),
 
-            // 底部按钮
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: widget.onCancel,
-                  child: const Text('取消'),
-                ),
-                const SizedBox(width: 12),
-                FilledButton.icon(
-                  onPressed: () {
-                    final query = _searchController.text.trim();
-                    if (query.isEmpty) {
-                      context.showWarning('请输入搜索关键词');
-                      return;
-                    }
-                    widget.onConfirm(query);
-                  },
-                  icon: const Icon(Icons.search),
-                  label: const Text('搜索'),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
+                // 信息提示卡片 - 紧凑版
+                Container(
+                  padding: EdgeInsets.all(isCompact ? 10 : 12),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: colorScheme.primary.withOpacity(0.3),
+                      width: 1,
                     ),
                   ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        color: colorScheme.primary,
+                        size: isCompact ? 18 : 20,
+                      ),
+                      SizedBox(width: isCompact ? 8 : 10),
+                      Expanded(
+                        child: Text(
+                          '将从多个磁力网站搜索资源',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                            fontSize: isCompact ? 13 : null,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: isCompact ? 12 : 16),
+
+                // 搜索模式选择 - 紧凑版
+                Text(
+                  '选择搜索方式',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    fontSize: isCompact ? 13 : null,
+                  ),
+                ),
+                SizedBox(height: isCompact ? 6 : 8),
+                
+                _MagnetSearchModeSelector(
+                  selectedMode: _searchMode,
+                  onModeChanged: _onSearchModeChanged,
+                  isCompact: isCompact,
+                ),
+                
+                SizedBox(height: isCompact ? 12 : 16),
+
+                // 搜索关键词输入 - 紧凑版
+                Text(
+                  '搜索关键词',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    fontSize: isCompact ? 13 : null,
+                  ),
+                ),
+                SizedBox(height: isCompact ? 6 : 8),
+                
+                TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: '输入识别号或标题',
+                    hintStyle: TextStyle(fontSize: isCompact ? 13 : null),
+                    prefixIcon: Icon(Icons.search, size: isCompact ? 18 : 20),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+                    contentPadding: EdgeInsets.symmetric(
+                      vertical: isCompact ? 10 : 12,
+                      horizontal: isCompact ? 10 : 12,
+                    ),
+                    isDense: true,
+                  ),
+                  style: TextStyle(fontSize: isCompact ? 14 : null),
+                  onSubmitted: (_) {
+                    final query = _searchController.text.trim();
+                    if (query.isNotEmpty) {
+                      widget.onConfirm(query);
+                    }
+                  },
+                ),
+                
+                SizedBox(height: isCompact ? 12 : 16),
+
+                // 底部按钮 - 紧凑版
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: widget.onCancel,
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isCompact ? 12 : 16,
+                          vertical: isCompact ? 8 : 10,
+                        ),
+                      ),
+                      child: Text(
+                        '取消',
+                        style: TextStyle(fontSize: isCompact ? 13 : null),
+                      ),
+                    ),
+                    SizedBox(width: isCompact ? 6 : 8),
+                    FilledButton.icon(
+                      onPressed: () {
+                        final query = _searchController.text.trim();
+                        if (query.isEmpty) {
+                          context.showWarning('请输入搜索关键词');
+                          return;
+                        }
+                        widget.onConfirm(query);
+                      },
+                      icon: Icon(Icons.search, size: isCompact ? 16 : 18),
+                      label: Text(
+                        '搜索',
+                        style: TextStyle(fontSize: isCompact ? 13 : null),
+                      ),
+                      style: FilledButton.styleFrom(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isCompact ? 12 : 16,
+                          vertical: isCompact ? 8 : 10,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -1483,17 +1586,21 @@ class _EnhancedMagnetScrapeDialogState extends State<_EnhancedMagnetScrapeDialog
 class _MagnetSearchModeSelector extends StatelessWidget {
   final String selectedMode;
   final Function(String) onModeChanged;
+  final bool isCompact;
 
   const _MagnetSearchModeSelector({
     required this.selectedMode,
     required this.onModeChanged,
+    this.isCompact = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final spacing = isCompact ? 4.0 : 6.0;
+    
     return Column(
       children: [
-        _ModeOptionCard(
+        _CompactModeOptionCard(
           mode: 'code',
           selectedMode: selectedMode,
           icon: Icons.tag,
@@ -1501,9 +1608,10 @@ class _MagnetSearchModeSelector extends StatelessWidget {
           subtitle: '使用识别号精确匹配',
           color: Colors.blue,
           onModeChanged: onModeChanged,
+          isCompact: isCompact,
         ),
-        const SizedBox(height: 8),
-        _ModeOptionCard(
+        SizedBox(height: spacing),
+        _CompactModeOptionCard(
           mode: 'title',
           selectedMode: selectedMode,
           icon: Icons.title,
@@ -1511,9 +1619,10 @@ class _MagnetSearchModeSelector extends StatelessWidget {
           subtitle: '使用标题模糊搜索',
           color: Colors.green,
           onModeChanged: onModeChanged,
+          isCompact: isCompact,
         ),
-        const SizedBox(height: 8),
-        _ModeOptionCard(
+        SizedBox(height: spacing),
+        _CompactModeOptionCard(
           mode: 'series_date',
           selectedMode: selectedMode,
           icon: Icons.calendar_today,
@@ -1521,6 +1630,7 @@ class _MagnetSearchModeSelector extends StatelessWidget {
           subtitle: '使用系列名称+发布日期',
           color: Colors.orange,
           onModeChanged: onModeChanged,
+          isCompact: isCompact,
         ),
       ],
     );
@@ -1530,7 +1640,7 @@ class _MagnetSearchModeSelector extends StatelessWidget {
 
 
 /// 增强版磁力搜索进度对话框
-class EnhancedMagnetSearchProgressDialog extends StatefulWidget {
+class EnhancedMagnetSearchProgressDialog extends ConsumerStatefulWidget {
   final String sessionId;
   final String locale;
   final Function(Map<String, dynamic>) onComplete;
@@ -1543,15 +1653,14 @@ class EnhancedMagnetSearchProgressDialog extends StatefulWidget {
   });
 
   @override
-  State<EnhancedMagnetSearchProgressDialog> createState() =>
+  ConsumerState<EnhancedMagnetSearchProgressDialog> createState() =>
       _EnhancedMagnetSearchProgressDialogState();
 }
 
 class _EnhancedMagnetSearchProgressDialogState
-    extends State<EnhancedMagnetSearchProgressDialog>
+    extends ConsumerState<EnhancedMagnetSearchProgressDialog>
     with SingleTickerProviderStateMixin {
   Timer? _timer;
-  ProviderContainer? _container;
   
   String _currentSite = '';
   String _currentStatus = 'searching';
@@ -1604,7 +1713,6 @@ class _EnhancedMagnetSearchProgressDialogState
     _timer?.cancel();
     _tipTimer?.cancel();
     _pulseController.dispose();
-    _container?.dispose();
     super.dispose();
   }
 
@@ -1616,8 +1724,7 @@ class _EnhancedMagnetSearchProgressDialogState
       }
 
       try {
-        _container ??= ProviderContainer();
-        final baseUrl = _container!.read(apiBaseUrlProvider);
+        final baseUrl = ref.read(apiBaseUrlProvider);
         final fullApiUrl = getFullApiUrl(baseUrl);
 
         final dio = Dio(BaseOptions(
@@ -2467,12 +2574,14 @@ class _ContentTypeCard extends StatelessWidget {
   final IconData icon;
   final bool isSelected;
   final VoidCallback onTap;
+  final bool isCompact;
 
   const _ContentTypeCard({
     required this.type,
     required this.icon,
     required this.isSelected,
     required this.onTap,
+    this.isCompact = false,
   });
 
   @override
@@ -2484,11 +2593,14 @@ class _ContentTypeCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(10),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+        padding: EdgeInsets.symmetric(
+          vertical: isCompact ? 10 : 12,
+          horizontal: isCompact ? 8 : 10,
+        ),
         decoration: BoxDecoration(
           color: isSelected
-              ? colorScheme.primary.withOpacity(0.1)
-              : colorScheme.surfaceVariant.withOpacity(0.3),
+              ? colorScheme.primary.withOpacity(0.12)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isSelected
@@ -2503,14 +2615,15 @@ class _ContentTypeCard extends StatelessWidget {
             Icon(
               icon,
               color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
-              size: 18,
+              size: isCompact ? 16 : 18,
             ),
-            const SizedBox(width: 6),
+            SizedBox(width: isCompact ? 4 : 6),
             Text(
               type,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontSize: isCompact ? 13 : null,
               ),
             ),
           ],
@@ -2798,266 +2911,314 @@ class _EnhancedMultipleResultsDialogState
 
     return Dialog(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
       ),
       elevation: 8,
-      child: Container(
-        constraints: const BoxConstraints(
-          maxWidth: 900,
-          maxHeight: 700,
-        ),
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 标题栏
-            Row(
-              children: [
-                Icon(
-                  Icons.grid_view,
-                  color: colorScheme.primary,
-                  size: 24,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.title,
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        '找到 ${_filteredResults.length} 个结果',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close, size: 20),
-                  onPressed: () => Navigator.of(context).pop(),
-                  tooltip: '取消',
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // 响应式：根据屏幕宽度调整对话框宽度和布局
+          final maxWidth = constraints.maxWidth > 900 ? 900.0 : constraints.maxWidth * 0.95;
+          final maxHeight = constraints.maxHeight > 700 ? 700.0 : constraints.maxHeight * 0.9;
+          final isCompact = constraints.maxWidth < 600;
+          final crossAxisCount = isCompact ? 2 : 3;
+          final childAspectRatio = isCompact ? 0.65 : 0.7;
+          
+          return Container(
+            constraints: BoxConstraints(
+              maxWidth: maxWidth,
+              maxHeight: maxHeight,
             ),
-            const SizedBox(height: 16),
-
-            // 搜索和工具栏
-            Row(
+            padding: EdgeInsets.all(isCompact ? 16 : 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 搜索框
-                Expanded(
-                  flex: 2,
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: '搜索标题...',
-                      prefixIcon: const Icon(Icons.search, size: 20),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      filled: true,
-                      fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
-                      contentPadding: const EdgeInsets.symmetric(
-                        vertical: 8,
-                        horizontal: 12,
-                      ),
-                      isDense: true,
+                // 标题栏 - 紧凑版
+                Row(
+                  children: [
+                    Icon(
+                      Icons.grid_view,
+                      color: colorScheme.primary,
+                      size: isCompact ? 20 : 24,
                     ),
-                    onChanged: _onSearchChanged,
-                  ),
+                    SizedBox(width: isCompact ? 8 : 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.title,
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              fontSize: isCompact ? 18 : null,
+                            ),
+                          ),
+                          Text(
+                            '找到 ${_filteredResults.length} 个结果',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                              fontSize: isCompact ? 11 : null,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 20),
+                      onPressed: () => Navigator.of(context).pop(),
+                      tooltip: '取消',
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
+                SizedBox(height: isCompact ? 12 : 16),
 
-                // 排序按钮
-                PopupMenuButton<String>(
-                  icon: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.sort, size: 18),
-                      const SizedBox(width: 4),
-                      Icon(
-                        _sortAscending
-                            ? Icons.arrow_upward
-                            : Icons.arrow_downward,
-                        size: 14,
-                      ),
-                    ],
-                  ),
-                  tooltip: '排序',
-                  onSelected: _toggleSort,
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      value: 'release_date',
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.calendar_today,
-                            size: 16,
-                            color: _sortBy == 'release_date'
-                                ? colorScheme.primary
-                                : null,
+                // 搜索和工具栏 - 紧凑版
+                Row(
+                  children: [
+                    // 搜索框
+                    Expanded(
+                      flex: 2,
+                      child: TextField(
+                        decoration: InputDecoration(
+                          hintText: '搜索标题...',
+                          hintStyle: TextStyle(fontSize: isCompact ? 13 : null),
+                          prefixIcon: Icon(Icons.search, size: isCompact ? 18 : 20),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
                           ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '按日期',
-                            style: TextStyle(
-                              color: _sortBy == 'release_date'
-                                  ? colorScheme.primary
-                                  : null,
-                              fontWeight: _sortBy == 'release_date'
-                                  ? FontWeight.bold
-                                  : null,
-                            ),
+                          filled: true,
+                          fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+                          contentPadding: EdgeInsets.symmetric(
+                            vertical: isCompact ? 6 : 8,
+                            horizontal: isCompact ? 8 : 12,
                           ),
-                        ],
+                          isDense: true,
+                        ),
+                        style: TextStyle(fontSize: isCompact ? 14 : null),
+                        onChanged: _onSearchChanged,
                       ),
                     ),
-                    PopupMenuItem(
-                      value: 'title',
-                      child: Row(
+                    SizedBox(width: isCompact ? 6 : 8),
+
+                    // 排序按钮 - 紧凑版
+                    PopupMenuButton<String>(
+                      icon: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
+                          Icon(Icons.sort, size: isCompact ? 16 : 18),
+                          SizedBox(width: isCompact ? 2 : 4),
                           Icon(
-                            Icons.title,
-                            size: 16,
-                            color: _sortBy == 'title'
-                                ? colorScheme.primary
-                                : null,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '按标题',
-                            style: TextStyle(
-                              color: _sortBy == 'title'
-                                  ? colorScheme.primary
-                                  : null,
-                              fontWeight: _sortBy == 'title'
-                                  ? FontWeight.bold
-                                  : null,
-                            ),
+                            _sortAscending
+                                ? Icons.arrow_upward
+                                : Icons.arrow_downward,
+                            size: isCompact ? 12 : 14,
                           ),
                         ],
+                      ),
+                      tooltip: '排序',
+                      onSelected: _toggleSort,
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: 'release_date',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.calendar_today,
+                                size: isCompact ? 14 : 16,
+                                color: _sortBy == 'release_date'
+                                    ? colorScheme.primary
+                                    : null,
+                              ),
+                              SizedBox(width: isCompact ? 6 : 8),
+                              Text(
+                                '按日期',
+                                style: TextStyle(
+                                  color: _sortBy == 'release_date'
+                                      ? colorScheme.primary
+                                      : null,
+                                  fontWeight: _sortBy == 'release_date'
+                                      ? FontWeight.bold
+                                      : null,
+                                  fontSize: isCompact ? 13 : null,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 'title',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.title,
+                                size: isCompact ? 14 : 16,
+                                color: _sortBy == 'title'
+                                    ? colorScheme.primary
+                                    : null,
+                              ),
+                              SizedBox(width: isCompact ? 6 : 8),
+                              Text(
+                                '按标题',
+                                style: TextStyle(
+                                  color: _sortBy == 'title'
+                                      ? colorScheme.primary
+                                      : null,
+                                  fontWeight: _sortBy == 'title'
+                                      ? FontWeight.bold
+                                      : null,
+                                  fontSize: isCompact ? 13 : null,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    // 全选/取消全选按钮 - 紧凑版
+                    if (!isCompact)
+                      TextButton.icon(
+                        onPressed: selectedCount == _filteredResults.length
+                            ? _clearSelection
+                            : _selectAll,
+                        icon: Icon(
+                          selectedCount == _filteredResults.length
+                              ? Icons.check_box
+                              : Icons.check_box_outline_blank,
+                          size: 18,
+                        ),
+                        label: Text(
+                          selectedCount == _filteredResults.length ? '取消全选' : '全选',
+                        ),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                        ),
+                      )
+                    else
+                      IconButton(
+                        onPressed: selectedCount == _filteredResults.length
+                            ? _clearSelection
+                            : _selectAll,
+                        icon: Icon(
+                          selectedCount == _filteredResults.length
+                              ? Icons.check_box
+                              : Icons.check_box_outline_blank,
+                          size: 20,
+                        ),
+                        tooltip: selectedCount == _filteredResults.length ? '取消全选' : '全选',
+                        visualDensity: VisualDensity.compact,
+                      ),
+                  ],
+                ),
+                SizedBox(height: isCompact ? 12 : 16),
+
+                // 结果网格 - 响应式
+                Expanded(
+                  child: _filteredResults.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.search_off,
+                                size: isCompact ? 48 : 64,
+                                color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                              ),
+                              SizedBox(height: isCompact ? 12 : 16),
+                              Text(
+                                '没有找到匹配的结果',
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                  fontSize: isCompact ? 14 : null,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : GridView.builder(
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: crossAxisCount,
+                            childAspectRatio: childAspectRatio,
+                            crossAxisSpacing: isCompact ? 8 : 12,
+                            mainAxisSpacing: isCompact ? 8 : 12,
+                          ),
+                          itemCount: _filteredResults.length,
+                          itemBuilder: (context, index) {
+                            final result = _filteredResults[index];
+                            final isSelected = _selectedIndices.contains(index);
+                            return _ResultCard(
+                              result: result,
+                              isSelected: isSelected,
+                              onTap: () => _toggleSelection(index),
+                              isCompact: isCompact,
+                            );
+                          },
+                        ),
+                ),
+                SizedBox(height: isCompact ? 12 : 16),
+
+                // 底部操作栏 - 紧凑版
+                Row(
+                  children: [
+                    Text(
+                      '已选中 $selectedCount 个',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        fontSize: isCompact ? 13 : null,
+                      ),
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: _isImporting ? null : () => Navigator.of(context).pop(),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isCompact ? 12 : 16,
+                          vertical: isCompact ? 8 : 10,
+                        ),
+                      ),
+                      child: Text(
+                        '取消',
+                        style: TextStyle(fontSize: isCompact ? 13 : null),
+                      ),
+                    ),
+                    SizedBox(width: isCompact ? 6 : 8),
+                    FilledButton.icon(
+                      onPressed: (selectedCount > 0 && !_isImporting)
+                          ? _importSelectedResults
+                          : null,
+                      icon: _isImporting
+                          ? SizedBox(
+                              width: isCompact ? 16 : 18,
+                              height: isCompact ? 16 : 18,
+                              child: const CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : Icon(Icons.download, size: isCompact ? 16 : 18),
+                      label: Text(
+                        _isImporting ? '导入中...' : (isCompact ? '导入 ($selectedCount)' : '导入选中项 ($selectedCount)'),
+                        style: TextStyle(fontSize: isCompact ? 13 : null),
+                      ),
+                      style: FilledButton.styleFrom(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isCompact ? 12 : 16,
+                          vertical: isCompact ? 8 : 10,
+                        ),
                       ),
                     ),
                   ],
                 ),
-
-                // 全选/取消全选按钮
-                TextButton.icon(
-                  onPressed: selectedCount == _filteredResults.length
-                      ? _clearSelection
-                      : _selectAll,
-                  icon: Icon(
-                    selectedCount == _filteredResults.length
-                        ? Icons.check_box
-                        : Icons.check_box_outline_blank,
-                    size: 18,
-                  ),
-                  label: Text(
-                    selectedCount == _filteredResults.length ? '取消全选' : '全选',
-                  ),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                  ),
-                ),
               ],
             ),
-            const SizedBox(height: 16),
-
-            // 结果网格
-            Expanded(
-              child: _filteredResults.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.search_off,
-                            size: 64,
-                            color: colorScheme.onSurfaceVariant.withOpacity(0.5),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            '没有找到匹配的结果',
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : GridView.builder(
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        childAspectRatio: 0.7,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                      ),
-                      itemCount: _filteredResults.length,
-                      itemBuilder: (context, index) {
-                        final result = _filteredResults[index];
-                        final isSelected = _selectedIndices.contains(index);
-                        return _ResultCard(
-                          result: result,
-                          isSelected: isSelected,
-                          onTap: () => _toggleSelection(index),
-                        );
-                      },
-                    ),
-            ),
-            const SizedBox(height: 16),
-
-            // 底部操作栏
-            Row(
-              children: [
-                Text(
-                  '已选中 $selectedCount 个',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const Spacer(),
-                TextButton(
-                  onPressed: _isImporting ? null : () => Navigator.of(context).pop(),
-                  child: const Text('取消'),
-                ),
-                const SizedBox(width: 8),
-                FilledButton.icon(
-                  onPressed: (selectedCount > 0 && !_isImporting)
-                      ? _importSelectedResults
-                      : null,
-                  icon: _isImporting
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      : const Icon(Icons.download, size: 18),
-                  label: Text(_isImporting ? '导入中...' : '导入选中项 ($selectedCount)'),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -3068,11 +3229,13 @@ class _ResultCard extends StatefulWidget {
   final Map<String, dynamic> result;
   final bool isSelected;
   final VoidCallback onTap;
+  final bool isCompact;
 
   const _ResultCard({
     required this.result,
     required this.isSelected,
     required this.onTap,
+    this.isCompact = false,
   });
 
   @override
@@ -3096,7 +3259,7 @@ class _ResultCardState extends State<_ResultCard> {
         child: Card(
           elevation: widget.isSelected ? 4 : (_isHovered ? 2 : 1),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(widget.isCompact ? 10 : 12),
             side: BorderSide(
               color: widget.isSelected
                   ? colorScheme.primary
@@ -3106,7 +3269,7 @@ class _ResultCardState extends State<_ResultCard> {
           ),
           child: InkWell(
             onTap: widget.onTap,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(widget.isCompact ? 10 : 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -3116,8 +3279,8 @@ class _ResultCardState extends State<_ResultCard> {
                     children: [
                       // 封面图
                       ClipRRect(
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(12),
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(widget.isCompact ? 10 : 12),
                         ),
                         child: widget.result['poster_url'] != null &&
                                 (widget.result['poster_url'] as String).isNotEmpty
@@ -3132,7 +3295,7 @@ class _ResultCardState extends State<_ResultCard> {
                                     child: Center(
                                       child: Icon(
                                         Icons.broken_image,
-                                        size: 48,
+                                        size: widget.isCompact ? 36 : 48,
                                         color: colorScheme.onSurfaceVariant,
                                       ),
                                     ),
@@ -3148,6 +3311,7 @@ class _ResultCardState extends State<_ResultCard> {
                                             ? loadingProgress.cumulativeBytesLoaded /
                                                 loadingProgress.expectedTotalBytes!
                                             : null,
+                                        strokeWidth: widget.isCompact ? 2 : 3,
                                       ),
                                     ),
                                   );
@@ -3158,7 +3322,7 @@ class _ResultCardState extends State<_ResultCard> {
                                 child: Center(
                                   child: Icon(
                                     Icons.image_not_supported,
-                                    size: 48,
+                                    size: widget.isCompact ? 36 : 48,
                                     color: colorScheme.onSurfaceVariant,
                                   ),
                                 ),
@@ -3166,8 +3330,8 @@ class _ResultCardState extends State<_ResultCard> {
                       ),
                       // 复选框（右上角）
                       Positioned(
-                        top: 8,
-                        right: 8,
+                        top: widget.isCompact ? 6 : 8,
+                        right: widget.isCompact ? 6 : 8,
                         child: Container(
                           decoration: BoxDecoration(
                             color: Colors.white,
@@ -3179,10 +3343,13 @@ class _ResultCardState extends State<_ResultCard> {
                               ),
                             ],
                           ),
-                          child: Checkbox(
-                            value: widget.isSelected,
-                            onChanged: (_) => widget.onTap(),
-                            shape: const CircleBorder(),
+                          child: Transform.scale(
+                            scale: widget.isCompact ? 0.85 : 1.0,
+                            child: Checkbox(
+                              value: widget.isSelected,
+                              onChanged: (_) => widget.onTap(),
+                              shape: const CircleBorder(),
+                            ),
                           ),
                         ),
                       ),
@@ -3191,7 +3358,7 @@ class _ResultCardState extends State<_ResultCard> {
                 ),
                 // 标题和信息
                 Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: EdgeInsets.all(widget.isCompact ? 8 : 12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -3202,42 +3369,45 @@ class _ResultCardState extends State<_ResultCard> {
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.bold,
+                          fontSize: widget.isCompact ? 13 : null,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: widget.isCompact ? 3 : 4),
                       // 发布日期
                       if (widget.result['release_date'] != null)
                         Row(
                           children: [
                             Icon(
                               Icons.calendar_today,
-                              size: 12,
+                              size: widget.isCompact ? 10 : 12,
                               color: colorScheme.onSurfaceVariant,
                             ),
-                            const SizedBox(width: 4),
+                            SizedBox(width: widget.isCompact ? 3 : 4),
                             Text(
                               widget.result['release_date'],
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: colorScheme.onSurfaceVariant,
+                                fontSize: widget.isCompact ? 11 : null,
                               ),
                             ),
                           ],
                         ),
                       // 时长（可选）
                       if (widget.result['runtime'] != null) ...[
-                        const SizedBox(height: 2),
+                        SizedBox(height: widget.isCompact ? 1 : 2),
                         Row(
                           children: [
                             Icon(
                               Icons.access_time,
-                              size: 12,
+                              size: widget.isCompact ? 10 : 12,
                               color: colorScheme.onSurfaceVariant,
                             ),
-                            const SizedBox(width: 4),
+                            SizedBox(width: widget.isCompact ? 3 : 4),
                             Text(
                               '${widget.result['runtime']} 分钟',
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: colorScheme.onSurfaceVariant,
+                                fontSize: widget.isCompact ? 11 : null,
                               ),
                             ),
                           ],

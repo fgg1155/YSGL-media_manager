@@ -177,7 +177,7 @@ async fn main() -> anyhow::Result<()> {
     let app = app.merge(sync_routes);
 
     // Run the server - 从环境变量读取配置，支持手机访问
-    let host = std::env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
+    let host = std::env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string());
     let port: u16 = std::env::var("PORT")
         .unwrap_or_else(|_| "3000".to_string())
         .parse()
