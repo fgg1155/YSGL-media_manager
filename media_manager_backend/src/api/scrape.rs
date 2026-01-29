@@ -246,6 +246,17 @@ pub async fn scrape_media(
                 sync_actors_to_db(&state, &actor_names, &media_id).await;
             }
             
+            // 调用缓存服务处理图片缓存
+            let scraper_name = data.get("source")
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown");
+            
+            let media_data = crate::services::cache::MediaData::from_media_item(&media);
+            
+            if let Err(e) = state.cache_service.handle_media_save(&media_id, &media_data, scraper_name).await {
+                tracing::error!("缓存处理失败: media_id={}, scraper={}, error={:?}", media_id, scraper_name, e);
+            }
+            
             return Ok(Json(serde_json::json!({
                 "success": true,
                 "data": MediaItemResponse::from(media)
@@ -445,6 +456,21 @@ pub async fn scrape_media(
             .map(String::from)
             .collect();
         sync_actors_to_db(&state, &actor_names, &media_id).await;
+    }
+    
+    // 10. 调用缓存服务处理图片缓存
+    // 从刮削数据中提取刮削器名称（source 字段）
+    let scraper_name = data.get("source")
+        .and_then(|v| v.as_str())
+        .unwrap_or("unknown");
+    
+    // 将 MediaItem 转换为 MediaData
+    let media_data = crate::services::cache::MediaData::from_media_item(&media);
+    
+    // 异步调用缓存服务（不阻塞响应）
+    if let Err(e) = state.cache_service.handle_media_save(&media_id, &media_data, scraper_name).await {
+        // 缓存失败不影响主流程，只记录错误日志
+        tracing::error!("缓存处理失败: media_id={}, scraper={}, error={:?}", media_id, scraper_name, e);
     }
     
     Ok(Json(serde_json::json!({
@@ -792,6 +818,11 @@ pub async fn batch_scrape_media_unified(
 
 /// 应用刮削结果到媒体（替换式更新 - 刮削数据有值时覆盖原数据）
 fn apply_scrape_result_to_media(media: &mut crate::models::MediaItem, scrape_data: &serde_json::Value) {
+    // 刮削器名称：有值则覆盖
+    if let Some(source) = scrape_data.get("source").and_then(|v| v.as_str()).filter(|s| !s.is_empty()) {
+        media.scraper_name = Some(source.to_string());
+    }
+    
     // 识别号：有值则覆盖
     if let Some(code) = scrape_data.get("code").and_then(|v| v.as_str()).filter(|s| !s.is_empty()) {
         media.code = Some(code.to_string());
@@ -1000,6 +1031,13 @@ fn apply_scrape_result_to_media(media: &mut crate::models::MediaItem, scrape_dat
 
 /// 应用刮削结果到媒体（补充式更新 - 只填充空字段）
 fn apply_scrape_result_to_media_supplement(media: &mut crate::models::MediaItem, scrape_data: &serde_json::Value) {
+    // 刮削器名称：如果为空则填充
+    if media.scraper_name.is_none() || media.scraper_name.as_ref().map(|s| s.is_empty()).unwrap_or(true) {
+        if let Some(source) = scrape_data.get("source").and_then(|v| v.as_str()).filter(|s| !s.is_empty()) {
+            media.scraper_name = Some(source.to_string());
+        }
+    }
+    
     // 识别号：如果为空则填充
     if media.code.is_none() || media.code.as_ref().map(|s| s.is_empty()).unwrap_or(true) {
         if let Some(code) = scrape_data.get("code").and_then(|v| v.as_str()) {

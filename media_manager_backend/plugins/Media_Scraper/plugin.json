@@ -2,7 +2,7 @@
   "id": "media_scraper",
   "name": "媒体刮削器",
   "version": "1.0.0",
-  "description": "通用媒体元数据刮削插件，支持日本AV（JAV）和欧美内容，集成 Fanza、JavBus、JavLibrary、JAVDBscrapers",
+  "description": "通用媒体元数据刮削插件，支持日本AV（JAV）和欧美内容，集成 Fanza、JavBus、JavLibrary、JAVDB等刮削器",
   "author": "Media Manager",
   "executable": "run_plugin.bat",
   "id_patterns": [
@@ -14,5 +14,29 @@
     "(RED|SKY|EX)-\\d{3,4}"
   ],
   "supports_search": true,
-  "enabled": true
+  "enabled": true,
+  "scrapers": [
+    { "name": "fanza", "display_name": "Fanza" },
+    { "name": "javbus", "display_name": "JavBus" },
+    { "name": "javlibrary", "display_name": "JavLibrary" },
+    { "name": "javdb", "display_name": "JAVDB" },
+    { "name": "avsox", "display_name": "AVSOX" },
+    { "name": "1pondo", "display_name": "1Pondo" },
+    { "name": "pacopacomama", "display_name": "Pacopacomama" },
+    { "name": "10musume", "display_name": "10Musume" },
+    { "name": "caribbeancom", "display_name": "Caribbeancom" },
+    { "name": "caribbeancompr", "display_name": "CaribbeancomPR" },
+    { "name": "heyzo", "display_name": "Heyzo" },
+    { "name": "tokyohot", "display_name": "TokyoHot" },
+    { "name": "theporndb", "display_name": "ThePornDB" },
+    { "name": "mindgeek", "display_name": "MindGeek" },
+    { "name": "gamma", "display_name": "Gamma" },
+    { "name": "hustler", "display_name": "Hustler" },
+    { "name": "mariskax", "display_name": "MariskaX" },
+    { "name": "adultprime", "display_name": "AdultPrime" },
+    { "name": "metart_network", "display_name": "MetArt Network" },
+    { "name": "scoregroup", "display_name": "Score Group" },
+    { "name": "japanhdv_network", "display_name": "JapanHDV Network" },
+    { "name": "maturenl", "display_name": "MatureNL" }
+  ]
 }

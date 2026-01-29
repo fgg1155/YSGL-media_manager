@@ -35,6 +35,7 @@ pub struct MediaItem {
     pub cover_video_url: Option<String>,    // 封面视频URL（短小的视频缩略图，用于悬停播放）
     pub studio: Option<String>,             // 厂商/制作公司
     pub series: Option<String>,             // 系列
+    pub scraper_name: Option<String>,       // 刮削器名称（用于缓存统计）
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -304,6 +305,7 @@ impl MediaItem {
             cover_video_url: None,
             studio: None,
             series: None,
+            scraper_name: None,
             created_at: now,
             updated_at: now,
         })
@@ -350,6 +352,7 @@ impl MediaItem {
             cover_video_url: None,
             studio: None,
             series: None,
+            scraper_name: None,
             created_at: now,
             updated_at: now,
         })
@@ -919,7 +922,7 @@ impl Serialize for MediaItem {
     {
         use serde::ser::SerializeStruct;
         
-        let mut state = serializer.serialize_struct("MediaItem", 30)?;
+        let mut state = serializer.serialize_struct("MediaItem", 31)?;
         
         state.serialize_field("id", &self.id)?;
         state.serialize_field("code", &self.code)?;
@@ -992,6 +995,7 @@ impl Serialize for MediaItem {
         state.serialize_field("cover_video_url", &self.cover_video_url)?;
         state.serialize_field("studio", &self.studio)?;
         state.serialize_field("series", &self.series)?;
+        state.serialize_field("scraper_name", &self.scraper_name)?;
         state.serialize_field("created_at", &self.created_at)?;
         state.serialize_field("updated_at", &self.updated_at)?;
         

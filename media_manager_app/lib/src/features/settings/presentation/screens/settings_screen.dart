@@ -20,6 +20,7 @@ import '../../../../core/plugins/ui_registry.dart';
 import '../../../../core/plugins/ui_renderer.dart';
 import '../../../sync/sync_status_widget.dart';
 import '../../../scan/presentation/screens/file_scan_screen.dart';
+import 'cache_settings_screen.dart';
 
 // Settings state providers
 final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
@@ -103,6 +104,12 @@ class SettingsScreen extends ConsumerWidget {
             title: const Text('扫描本地文件'),
             subtitle: const Text('扫描本地视频文件并匹配到媒体库'),
             onTap: () => _navigateToFileScan(context),
+          ),
+          ListTile(
+            leading: const Icon(Icons.storage_outlined),
+            title: const Text('缓存管理'),
+            subtitle: const Text('管理图片缓存配置和统计'),
+            onTap: () => _navigateToCacheSettings(context),
           ),
           ListTile(
             leading: const Icon(Icons.delete_outline),
@@ -1336,6 +1343,15 @@ class SettingsScreen extends ConsumerWidget {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => const FileScanScreen(),
+      ),
+    );
+  }
+
+  /// 导航到缓存设置页面
+  void _navigateToCacheSettings(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const CacheSettingsScreen(),
       ),
     );
   }

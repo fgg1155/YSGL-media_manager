@@ -34,11 +34,52 @@ async fn main() -> anyhow::Result<()> {
     // Initialize database service
     let db_service = services::DatabaseService::new(database.repository().clone());
     
+    // Initialize cache config manager
+    // 支持环境变量配置路径，默认使用相对路径 cache_config.json
+    let config_path = std::env::var("CACHE_CONFIG_PATH")
+        .ok()
+        .map(std::path::PathBuf::from);
+    
+    if let Some(ref path) = config_path {
+        tracing::info!("📁 Cache config path: {:?}", path);
+    } else {
+        tracing::info!("📁 Cache config path: cache_config.json (default)");
+    }
+    
+    let cache_config_manager = Arc::new(
+        services::ConfigManager::load(config_path)
+            .await
+            .expect("Failed to load cache config")
+    );
+    tracing::info!("✅ Cache config manager initialized");
+    
+    // Initialize cache service
+    // 使用相对路径，默认为 ./cache
+    let cache_dir = std::env::var("CACHE_DIR")
+        .unwrap_or_else(|_| "./cache".to_string());
+    
+    tracing::info!("📁 Cache directory: {}", cache_dir);
+    
+    let cache_service = Arc::new(
+        services::CacheService::new(
+            std::path::PathBuf::from(&cache_dir),
+            database.pool().clone(),
+        )
+        .await
+        .expect("Failed to initialize cache service")
+    );
+    tracing::info!("✅ Cache service initialized");
+    
     // Initialize external API client
     let external_client = external::ExternalApiClient::new();
     
     // Initialize plugin manager
-    let plugins_dir = std::env::var("PLUGINS_DIR").unwrap_or_else(|_| "./plugins".to_string());
+    // 使用相对路径，默认为 ./plugins
+    let plugins_dir = std::env::var("PLUGINS_DIR")
+        .unwrap_or_else(|_| "./plugins".to_string());
+    
+    tracing::info!("📁 Plugins directory: {}", plugins_dir);
+    
     let mut plugin_manager = plugins::manager::PluginManager::new(&plugins_dir);
     if let Err(e) = plugin_manager.scan_plugins().await {
         tracing::warn!("Failed to scan plugins: {}", e);
@@ -156,13 +197,31 @@ async fn main() -> anyhow::Result<()> {
         // Streaming
         .route("/api/media/:id/thumbnail", get(api::streaming::get_media_thumbnail))
         .route("/api/media/:id/video", get(api::streaming::stream_video))
+        // Cache management (using AppState)
+        .route("/api/cache/stats", get(api::cache::get_cache_stats))
+        .route("/api/media/:id/cache", axum::routing::delete(api::cache::clear_media_cache))
+        .route("/api/cache/all", axum::routing::delete(api::cache::clear_all_cache))
+        .route("/api/cache/orphaned", axum::routing::delete(api::cache::clear_orphaned_cache))
         .layer(CorsLayer::permissive())
         .with_state(api::AppState {
             database: database.clone(),
             db_service: std::sync::Arc::new(db_service),
             external_client,
             plugin_manager: plugin_manager.clone(),
+            cache_service: cache_service.clone(),
         });
+    
+    // Add cache config routes with separate state
+    let cache_config_state = Arc::new(api::cache::CacheConfigState {
+        config_manager: cache_config_manager.clone(),
+    });
+    
+    let cache_routes = Router::new()
+        .route("/api/cache/config", get(api::cache::get_cache_config))
+        .route("/api/cache/config", axum::routing::put(api::cache::update_cache_config))
+        .route("/api/cache/config/scraper/:scraper_name", axum::routing::put(api::cache::update_scraper_config))
+        .layer(CorsLayer::permissive())
+        .with_state(cache_config_state);
     
     // Add sync routes with separate state
     let sync_routes = Router::new()
@@ -174,7 +233,7 @@ async fn main() -> anyhow::Result<()> {
         .with_state(sync_trigger_state);
     
     // Merge routes
-    let app = app.merge(sync_routes);
+    let app = app.merge(cache_routes).merge(sync_routes);
 
     // Run the server - 从环境变量读取配置，支持手机访问
     let host = std::env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string());

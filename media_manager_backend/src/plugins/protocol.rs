@@ -232,6 +232,9 @@ pub struct PluginInfo {
     /// 是否支持搜索
     #[serde(default)]
     pub supports_search: bool,
+    /// 刮削器列表
+    #[serde(default)]
+    pub scrapers: Vec<ScraperInfo>,
 }
 
 /// 插件配置文件 (plugin.json)
@@ -260,6 +263,19 @@ pub struct PluginConfig {
     /// 是否启用
     #[serde(default = "default_true")]
     pub enabled: bool,
+    /// 刮削器列表
+    #[serde(default)]
+    pub scrapers: Vec<ScraperInfo>,
+}
+
+/// 刮削器信息
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ScraperInfo {
+    /// 刮削器名称
+    pub name: String,
+    /// 显示名称
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
 }
 
 fn default_true() -> bool {

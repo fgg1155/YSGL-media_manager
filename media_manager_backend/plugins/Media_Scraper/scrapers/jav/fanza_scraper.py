@@ -69,11 +69,18 @@ class FanzaScraper(BaseScraper):
         if video_urls:
             # 播放器 API 返回了多个清晰度，转换为统一格式
             # 格式: [{'quality': '清晰度名称', 'url': 'URL'}, ...]
-            result.preview_video_urls = [
+            player_videos = [
                 {'quality': quality, 'url': url}
                 for quality, url in video_urls.items()
+                if url and not url.endswith('.m3u8')  # 过滤掉 m3u8 文件
             ]
-            self.logger.info(f"从播放器 API 获取到 {len(video_urls)} 个清晰度的预览视频")
+            
+            if player_videos:
+                # 如果播放器 API 有有效视频，使用它（清晰度更多）
+                result.preview_video_urls = player_videos
+                self.logger.info(f"从播放器 API 获取到 {len(player_videos)} 个清晰度的预览视频")
+            else:
+                self.logger.debug(f"播放器 API 返回的都是 m3u8 文件，使用 GraphQL API 的视频")
         else:
             self.logger.debug(f"播放器 API 未返回视频，使用 GraphQL API 的视频")
         

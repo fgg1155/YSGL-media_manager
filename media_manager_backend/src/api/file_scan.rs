@@ -821,6 +821,11 @@ async fn process_auto_scrape(
 
 /// 应用刮削结果到媒体
 fn apply_scrape_result_to_media(media: &mut crate::models::MediaItem, scrape_data: &serde_json::Value) {
+    // 刮削器名称
+    if let Some(source) = scrape_data.get("source").and_then(|v| v.as_str()) {
+        media.scraper_name = Some(source.to_string());
+    }
+    
     // 识别号
     if let Some(code) = scrape_data.get("code").and_then(|v| v.as_str()) {
         media.code = Some(code.to_string());

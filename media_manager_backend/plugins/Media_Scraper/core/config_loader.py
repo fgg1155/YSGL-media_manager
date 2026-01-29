@@ -55,9 +55,9 @@ def _get_default_config() -> Dict[str, Any]:
         },
         'actor': {
             'normalize_actor_names': True,
-            'actor_alias_file': 'data/actress_alias.json',
+            'actor_alias_file': 'config/actress_alias.json',
             'filter_male_actors': True,
-            'male_actors_file': 'data/male_actors.json'
+            'male_actors_file': 'config/male_actors.json'
         },
         'data_cleaning': {
             'enabled': True,

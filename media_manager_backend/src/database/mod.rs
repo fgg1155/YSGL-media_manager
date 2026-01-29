@@ -21,10 +21,11 @@ pub struct Database {
 
 impl Database {
     pub async fn new() -> Result<Self> {
+        // 支持环境变量配置，默认使用相对路径 ./media_manager.db
         let database_url = std::env::var("DATABASE_URL")
             .unwrap_or_else(|_| "sqlite:./media_manager.db?mode=rwc".to_string());
         
-        tracing::info!("Connecting to database: {}", database_url);
+        tracing::info!("🗄️  Connecting to database: {}", database_url);
         
         // 配置 SQLite 连接选项
         let connect_options = SqliteConnectOptions::from_str(&database_url)?

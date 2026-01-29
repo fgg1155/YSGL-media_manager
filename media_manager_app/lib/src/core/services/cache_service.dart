@@ -126,8 +126,8 @@ class CacheService {
   void clearLongTerm() => _longTermCache.clear();
 
   // Get cache statistics
-  CacheStats getStats() {
-    return CacheStats(
+  MemoryCacheStats getStats() {
+    return MemoryCacheStats(
       shortTermSize: _shortTermCache.length,
       mediumTermSize: _mediumTermCache.length,
       longTermSize: _longTermCache.length,
@@ -135,12 +135,12 @@ class CacheService {
   }
 }
 
-class CacheStats {
+class MemoryCacheStats {
   final int shortTermSize;
   final int mediumTermSize;
   final int longTermSize;
 
-  const CacheStats({
+  const MemoryCacheStats({
     required this.shortTermSize,
     required this.mediumTermSize,
     required this.longTermSize,

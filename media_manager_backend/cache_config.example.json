@@ -1,0 +1,23 @@
+{
+  "global_cache_enabled": false,
+  "scrapers": {
+    "maturenl": {
+      "cache_enabled": true,
+      "auto_enabled": true,
+      "auto_enabled_at": "2026-01-27T15:30:00Z",
+      "cache_fields": [
+        "poster",
+        "backdrop",
+        "preview"
+      ]
+    },
+    "mindgeek": {
+      "cache_enabled": false,
+      "auto_enabled": false,
+      "cache_fields": [
+        "poster",
+        "backdrop"
+      ]
+    }
+  }
+}

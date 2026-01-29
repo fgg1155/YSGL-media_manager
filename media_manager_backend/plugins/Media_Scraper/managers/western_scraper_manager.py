@@ -220,10 +220,15 @@ class WesternScraperManager:
             target_scraper = self._find_scraper_for_series(series, content_type_hint, is_date_query=is_date_query_flag)
             
             if not target_scraper:
-                # 未找到对应的刮削器，说明 series 不是真正的系列名
-                # 直接走"无系列名"流程（AdultPrime → ThePornDB）
-                self.logger.info(f"系列 {series} 不是已知系列名，按无系列名模式处理")
-                series = None  # 清空 series，走无系列名流程
+                # 未找到对应的刮削器
+                # 可能是：1) series 不是真正的系列名，2) 系列不支持日期搜索
+                # 对于情况2，应该直接走保底 ThePornDB，而不是无系列名模式
+                if is_date_query_flag:
+                    self.logger.info(f"日期查询模式下未找到支持的刮削器，直接走保底 ThePornDB")
+                    # 不清空 series，直接跳到步骤 5（保底 ThePornDB）
+                else:
+                    self.logger.info(f"系列 {series} 不是已知系列名，按无系列名模式处理")
+                    series = None  # 清空 series，走无系列名流程
             else:
                 # 找到对应的刮削器
                 scraper_name, scraper = target_scraper
@@ -565,28 +570,44 @@ class WesternScraperManager:
             available_scrapers = self.scene_search_scrapers
             self.logger.info(f"[查找刮削器] 内容类型: {content_type_hint or 'Scene'}，使用所有刮削器")
         
-        # 如果是日期查询，进一步过滤只支持日期搜索的刮削器
+        # 如果是日期查询，记录支持日期搜索的刮削器（用于后续检查）
+        date_search_scrapers = None
         if is_date_query:
-            available_scrapers = available_scrapers & self.series_date_search_scrapers
-            self.logger.info(f"[查找刮削器] 日期查询模式，只使用支持系列+日期搜索的刮削器: {available_scrapers}")
+            date_search_scrapers = available_scrapers & self.series_date_search_scrapers
+            self.logger.info(f"[查找刮削器] 日期查询模式，支持系列+日期搜索的刮削器: {date_search_scrapers}")
         
         # 0. 检查独立刮削器（MariskaX, MetArt Network, Score Group, MatureNL）
-        if normalized_series == 'mariskax' and self.mariskax and 'mariskax' in available_scrapers:
-            self.logger.info(f"[查找刮削器] ✓ 系列 {series_name} 匹配 MariskaX 刮削器")
-            return ('mariskax', self.mariskax)
+        if normalized_series == 'mariskax' and self.mariskax:
+            if 'mariskax' in available_scrapers:
+                # 如果是日期查询，检查是否支持日期搜索
+                if is_date_query and 'mariskax' not in date_search_scrapers:
+                    self.logger.warning(f"[查找刮削器] ✗ 系列 {series_name} 属于 MariskaX，但不支持日期搜索")
+                    return None
+                self.logger.info(f"[查找刮削器] ✓ 系列 {series_name} 匹配 MariskaX 刮削器")
+                return ('mariskax', self.mariskax)
         
         # MatureNL 站点
-        if normalized_series == 'maturenl' and self.maturenl and 'maturenl' in available_scrapers:
-            self.logger.info(f"[查找刮削器] ✓ 系列 {series_name} 匹配 MatureNL 刮削器")
-            return ('maturenl', self.maturenl)
+        if normalized_series == 'maturenl' and self.maturenl:
+            if 'maturenl' in available_scrapers:
+                # 如果是日期查询，检查是否支持日期搜索
+                if is_date_query and 'maturenl' not in date_search_scrapers:
+                    self.logger.warning(f"[查找刮削器] ✗ 系列 {series_name} 属于 MatureNL，但不支持日期搜索")
+                    return None
+                self.logger.info(f"[查找刮削器] ✓ 系列 {series_name} 匹配 MatureNL 刮削器")
+                return ('maturenl', self.maturenl)
         
         # MetArt Network 站点（Straplez, X-Art, MetArt, SexArt, TheLifeErotic 等）
         metart_sites = ['straplez', 'xart', 'metart', 'sexart', 'thelifeerotic', 'metartnetwork', 
                         'vivthomas', 'erroticaarchives', 'domai', 'goddessnudes', 'eroticbeauty', 
                         'lovehairy', 'alsscan', 'rylskyart', 'eternaldesire', 'stunning18']
-        if normalized_series in metart_sites and self.metart and 'metart_network' in available_scrapers:
-            self.logger.info(f"[查找刮削器] ✓ 系列 {series_name} 匹配 MetArt Network 刮削器")
-            return ('metart_network', self.metart)
+        if normalized_series in metart_sites and self.metart:
+            if 'metart_network' in available_scrapers:
+                # 如果是日期查询，检查是否支持日期搜索
+                if is_date_query and 'metart_network' not in date_search_scrapers:
+                    self.logger.warning(f"[查找刮削器] ✗ 系列 {series_name} 属于 MetArt Network，但不支持日期搜索")
+                    return None
+                self.logger.info(f"[查找刮削器] ✓ 系列 {series_name} 匹配 MetArt Network 刮削器")
+                return ('metart_network', self.metart)
         
         # Score Group 站点（107个站点 - 完整列表，包含所有官方站点）
         scoregroup_sites = [
@@ -623,20 +644,30 @@ class WesternScraperManager:
             # 通用别名
             'scoregroup'
         ]
-        if normalized_series in scoregroup_sites and self.scoregroup and 'scoregroup' in available_scrapers:
-            self.logger.info(f"[查找刮削器] ✓ 系列 {series_name} 匹配 Score Group 刮削器")
-            return ('scoregroup', self.scoregroup)
+        if normalized_series in scoregroup_sites and self.scoregroup:
+            if 'scoregroup' in available_scrapers:
+                # 如果是日期查询，检查是否支持日期搜索
+                if is_date_query and 'scoregroup' not in date_search_scrapers:
+                    self.logger.warning(f"[查找刮削器] ✗ 系列 {series_name} 属于 Score Group，但不支持日期搜索")
+                    return None
+                self.logger.info(f"[查找刮削器] ✓ 系列 {series_name} 匹配 Score Group 刮削器")
+                return ('scoregroup', self.scoregroup)
         
         # JapanHDV Network 站点（从配置文件加载）
         self.logger.info(f"[查找刮削器] 检查 JapanHDV: japanhdv={self.japanhdv is not None}, has_config={hasattr(self.japanhdv, 'sites_config') if self.japanhdv else False}, in_available={'japanhdv_network' in available_scrapers}")
-        if self.japanhdv and hasattr(self.japanhdv, 'sites_config') and 'japanhdv_network' in available_scrapers:
+        if self.japanhdv and hasattr(self.japanhdv, 'sites_config'):
             self.logger.info(f"[查找刮削器] 检查 JapanHDV Network，配置站点: {list(self.japanhdv.sites_config.keys())}")
             for key in self.japanhdv.sites_config.keys():
                 normalized_key = re.sub(r'[^a-zA-Z0-9]', '', key).lower()
                 self.logger.info(f"[查找刮削器] 比较: {normalized_series} vs {normalized_key} (原始: {key})")
                 if normalized_series == normalized_key:
-                    self.logger.info(f"[查找刮削器] ✓ 系列 {series_name} 在 JapanHDV Network 配置中找到 (key={key})")
-                    return ('japanhdv_network', self.japanhdv)
+                    if 'japanhdv_network' in available_scrapers:
+                        # 如果是日期查询，检查是否支持日期搜索
+                        if is_date_query and 'japanhdv_network' not in date_search_scrapers:
+                            self.logger.warning(f"[查找刮削器] ✗ 系列 {series_name} 属于 JapanHDV Network，但不支持日期搜索")
+                            return None
+                        self.logger.info(f"[查找刮削器] ✓ 系列 {series_name} 在 JapanHDV Network 配置中找到 (key={key})")
+                        return ('japanhdv_network', self.japanhdv)
             self.logger.info(f"[查找刮削器] JapanHDV Network 中未找到匹配: {normalized_series}")
         
         # 1. 检查 AdultPrime 刮削器（匹配任何 AdultPrime 相关的系列名）
@@ -666,32 +697,59 @@ class WesternScraperManager:
             'vlaamschepassie', 'vrteenrs', 'wankrs', 'yanks', 'youngbusty'
         ]
         
-        if self.adultprime and normalized_series in adultprime_sites and 'adultprime' in available_scrapers:
-            self.logger.info(f"[查找刮削器] ✓ 系列 {series_name} 匹配 AdultPrime 刮削器")
-            return ('adultprime', self.adultprime)
+        if self.adultprime and normalized_series in adultprime_sites:
+            if 'adultprime' in available_scrapers:
+                # 如果是日期查询，检查是否支持日期搜索
+                if is_date_query and 'adultprime' not in date_search_scrapers:
+                    self.logger.warning(f"[查找刮削器] ✗ 系列 {series_name} 属于 AdultPrime，但不支持日期搜索")
+                    return None
+                self.logger.info(f"[查找刮削器] ✓ 系列 {series_name} 匹配 AdultPrime 刮削器")
+                return ('adultprime', self.adultprime)
         
         # 2. 检查 Gamma 刮削器（优先检查，因为 Gamma 站点更多）
-        if self.gamma and hasattr(self.gamma, 'sites_config') and 'gamma' in available_scrapers:
+        if self.gamma and hasattr(self.gamma, 'sites_config'):
             for key in self.gamma.sites_config.keys():
                 normalized_key = re.sub(r'[^a-zA-Z0-9]', '', key).lower()
                 if normalized_series == normalized_key:
-                    self.logger.info(f"[查找刮削器] ✓ 系列 {series_name} 在 Gamma 配置中找到 (key={key})")
-                    return ('gamma', self.gamma)
+                    if 'gamma' in available_scrapers:
+                        # 如果是日期查询，检查是否支持日期搜索
+                        if is_date_query and 'gamma' not in date_search_scrapers:
+                            self.logger.warning(f"[查找刮削器] ✗ 系列 {series_name} 属于 Gamma，但不支持日期搜索")
+                            return None
+                        self.logger.info(f"[查找刮削器] ✓ 系列 {series_name} 在 Gamma 配置中找到 (key={key})")
+                        return ('gamma', self.gamma)
         
         # 3. 检查 MindGeek 刮削器
-        if self.mindgeek and hasattr(self.mindgeek, 'sites_config') and 'mindgeek' in available_scrapers:
+        if self.mindgeek and hasattr(self.mindgeek, 'sites_config'):
+            self.logger.info(f"[查找刮削器] 检查 MindGeek，配置站点数量: {len(self.mindgeek.sites_config)}")
             for key in self.mindgeek.sites_config.keys():
                 normalized_key = re.sub(r'[^a-zA-Z0-9]', '', key).lower()
                 if normalized_series == normalized_key:
-                    self.logger.info(f"[查找刮削器] ✓ 系列 {series_name} 在 MindGeek 配置中找到 (key={key})")
-                    return ('mindgeek', self.mindgeek)
+                    self.logger.info(f"[查找刮削器] 找到匹配: {normalized_series} == {normalized_key} (原始: {key})")
+                    if 'mindgeek' in available_scrapers:
+                        # 如果是日期查询，检查是否支持日期搜索
+                        if is_date_query and 'mindgeek' not in date_search_scrapers:
+                            self.logger.warning(f"[查找刮削器] ✗ 系列 {series_name} 属于 MindGeek，但不支持日期搜索")
+                            return None
+                        self.logger.info(f"[查找刮削器] ✓ 系列 {series_name} 在 MindGeek 配置中找到 (key={key})")
+                        return ('mindgeek', self.mindgeek)
+                    else:
+                        self.logger.warning(f"[查找刮削器] MindGeek 不在 available_scrapers 中: {available_scrapers}")
+        else:
+            self.logger.warning(f"[查找刮削器] MindGeek 刮削器不可用或没有配置")
         
         # 4. 检查 Hustler 刮削器
-        if self.hustler and hasattr(self.hustler, 'sites_config') and 'hustler' in available_scrapers:
+        if self.hustler and hasattr(self.hustler, 'sites_config'):
             for key in self.hustler.sites_config.keys():
                 normalized_key = re.sub(r'[^a-zA-Z0-9]', '', key).lower()
                 if normalized_series == normalized_key:
-                    self.logger.info(f"[查找刮削器] ✓ 系列 {series_name} 在 Hustler 配置中找到 (key={key})")
+                    if 'hustler' in available_scrapers:
+                        # 如果是日期查询，检查是否支持日期搜索
+                        if is_date_query and 'hustler' not in date_search_scrapers:
+                            self.logger.warning(f"[查找刮削器] ✗ 系列 {series_name} 属于 Hustler，但不支持日期搜索")
+                            return None
+                        self.logger.info(f"[查找刮削器] ✓ 系列 {series_name} 在 Hustler 配置中找到 (key={key})")
+                        return ('hustler', self.hustler)
                     return ('hustler', self.hustler)
         
         self.logger.warning(f"[查找刮削器] ✗ 系列 {series_name} 未在任何刮削器配置中找到")

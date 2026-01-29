@@ -177,6 +177,7 @@ impl PluginManager {
             author: p.config.author.clone(),
             id_patterns: p.config.id_patterns.clone(),
             supports_search: p.config.supports_search,
+            scrapers: p.config.scrapers.clone(),
         }).collect()
     }
     
